@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =====================================================
+// ENUMS
+// =====================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StockMovementType {
+  INITIAL
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+// =====================================================
+// USER
+// =====================================================
+
+model User {
+  id       Int      @id @default(autoincrement())
+  username String   @unique
+  email    String   @unique
+  password String
+  role     UserRole @default(STAFF)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  requestsCreated  Request[]       @relation("RequestCreator")
+  requestsApproved Request[]       @relation("RequestApprover")
+  stockMovements   StockMovement[]
+
+  @@index([role])
+  @@map("users")
+}
+
+// =====================================================
+// CATEGORY
+// =====================================================
+
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+// =====================================================
+// SUPPLIER
+// =====================================================
+
+model Supplier {
+  id          Int     @id @default(autoincrement())
+  code        String  @unique
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  products Product[]
+  requests Request[]
+
+  @@index([name])
+  @@map("suppliers")
+}
+
+// =====================================================
+// PRODUCT
+// =====================================================
+
+model Product {
+  id          Int           @id @default(autoincrement())
+  code        String        @unique
+  name        String
+  description String?
+  price       Decimal       @db.Decimal(12, 2)
+  stock       Int           @default(0)
+  minStock    Int           @default(0)
+  unit        String        @default("pcs")
+  status      ProductStatus @default(ACTIVE)
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  supplierId Int?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  stockMovements StockMovement[]
+  requestItems   RequestItem[]
+
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([name])
+  @@index([status])
+  @@map("products")
+}
+
+// =====================================================
+// STOCK MOVEMENT
+// =====================================================
+
+model StockMovement {
+  id Int @id @default(autoincrement())
+
+  type     StockMovementType
+  quantity Int
+
+  stockBefore Int
+  stockAfter  Int
+
+  note String?
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+// =====================================================
+// REQUEST
+// =====================================================
+
+model Request {
+  id            String        @id @default(cuid())
+  requestNumber String        @unique
+  status        RequestStatus @default(PENDING)
+  note          String?
+
+  // User yang membuat request
+  createdById Int
+  createdBy   User @relation("RequestCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  // User yang melakukan approval
+  approvedById Int?
+  approvedBy   User? @relation("RequestApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  supplierId Int?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  approvedAt  DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  items RequestItem[]
+
+  @@index([createdById])
+  @@index([approvedById])
+  @@index([supplierId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("requests")
+}
+
+// =====================================================
+// REQUEST ITEM
+// =====================================================
+
+model RequestItem {
+  id       Int     @id @default(autoincrement())
+  quantity Int
+  note     String?
+
+  requestId String
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@unique([requestId, productId])
+  @@index([requestId])
+  @@index([productId])
+  @@map("request_items")
+}
