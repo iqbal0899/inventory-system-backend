@@ -82,7 +82,9 @@ export async function createProductService(data) {
               data.unit || "pcs",
 
             status:
-              "ACTIVE",
+  data.status === "INACTIVE"
+    ? "INACTIVE"
+    : "ACTIVE",
 
             supplierId,
           },
@@ -139,10 +141,6 @@ export async function createProductService(data) {
 
 export async function getProductsService() {
   return prisma.product.findMany({
-    where: {
-      status: "ACTIVE",
-    },
-
     orderBy: {
       createdAt: "desc",
     },
@@ -233,81 +231,88 @@ export async function updateProductService(
   // DATA UPDATE
   // ==============================
 
-  const updateData = {
-    name:
-      data.name !== undefined
-        ? data.name.trim()
-        : existingProduct.name,
+const updateData = {
+  name:
+    data.name !== undefined
+      ? data.name.trim()
+      : existingProduct.name,
 
-    description:
-      data.description !== undefined
-        ? data.description?.trim() || null
-        : existingProduct.description,
+  description:
+    data.description !== undefined
+      ? data.description?.trim() || null
+      : existingProduct.description,
 
-    // Kategori sekarang STRING
-    category:
-      data.category !== undefined
-        ? data.category?.trim() || null
-        : existingProduct.category,
+  category:
+    data.category !== undefined
+      ? data.category?.trim() || null
+      : existingProduct.category,
 
-    image:
-      data.image !== undefined
-        ? data.image
-        : existingProduct.image,
+  image:
+    data.image !== undefined
+      ? data.image
+      : existingProduct.image,
 
-    price:
-      data.price !== undefined
-        ? Number(data.price)
-        : existingProduct.price,
+  price:
+    data.price !== undefined
+      ? Number(data.price)
+      : existingProduct.price,
 
-    stock:
-      data.stock !== undefined
-        ? Number(data.stock)
-        : existingProduct.stock,
+  stock:
+    data.stock !== undefined
+      ? Number(data.stock)
+      : existingProduct.stock,
 
-    minStock:
-      data.minStock !== undefined
-        ? Number(data.minStock)
-        : existingProduct.minStock,
+  minStock:
+    data.minStock !== undefined
+      ? Number(data.minStock)
+      : existingProduct.minStock,
 
-    unit:
-      data.unit !== undefined
-        ? data.unit
-        : existingProduct.unit,
+  unit:
+    data.unit !== undefined
+      ? data.unit
+      : existingProduct.unit,
 
-    supplierId,
-  };
+  status:
+    data.status !== undefined
+      ? data.status
+      : existingProduct.status,
+
+  supplierId,
+};
 
   // ==============================
   // VALIDASI ANGKA
   // ==============================
 
-  if (
-    Number.isNaN(updateData.price) ||
-    updateData.price < 0
-  ) {
-    throw new Error(
-      "Harga produk tidak valid"
-    );
-  }
+ if (
+  Number.isNaN(updateData.minStock) ||
+  updateData.minStock < 0
+) {
+  throw new Error(
+    "Minimum stok tidak valid"
+  );
+}
 
-  if (
-    Number.isNaN(updateData.stock) ||
-    updateData.stock < 0
-  ) {
-    throw new Error(
-      "Stok produk tidak valid"
-    );
-  }
+if (
+  updateData.status !== "ACTIVE" &&
+  updateData.status !== "INACTIVE"
+) {
+  throw new Error(
+    "Status produk tidak valid"
+  );
+}
 
-  if (
-    Number.isNaN(updateData.minStock) ||
-    updateData.minStock < 0
-  ) {
-    throw new Error(
-      "Minimum stok tidak valid"
-    );
-  }
+return prisma.product.update({
+  where: {
+    id,
+  },
+
+  data: updateData,
+
+  include: {
+    supplier: true,
+  },
+});
 
   // ==============================
   // UPDATE PRODUCT

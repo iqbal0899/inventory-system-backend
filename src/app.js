@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.route.js";
 import productRoutes from "./routes/product.route.js";
 import supplierRoutes from "./routes/supplier.route.js";
+import dashboardRoutes from "./routes/dashboard.route.js";
+import stockRoutes from "./routes/stock.route.js";
 
 const app = express();
 
@@ -22,6 +24,8 @@ app.use(cookieParser());
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/suppliers", supplierRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/stocks", stockRoutes);
 
 app.get("/", (req, res) => {
   res.json({

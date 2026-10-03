@@ -86,6 +86,7 @@ export async function getProductById(req, res) {
 }
 
 // CREATE PRODUCT
+// CREATE PRODUCT
 export async function createProduct(req, res) {
   try {
     const {
@@ -97,6 +98,7 @@ export async function createProduct(req, res) {
       minStock,
       unit,
       supplierId,
+      status,
     } = req.body;
 
     if (!name || !name.trim()) {
@@ -131,7 +133,10 @@ export async function createProduct(req, res) {
       });
     }
 
-    if (Number.isNaN(numericMinStock) || numericMinStock < 0) {
+    if (
+      Number.isNaN(numericMinStock) ||
+      numericMinStock < 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "Minimum stok tidak valid",
@@ -152,6 +157,7 @@ export async function createProduct(req, res) {
       unit,
       supplierId,
       image,
+      status: status || "ACTIVE",
     });
 
     return res.status(201).json({
@@ -160,11 +166,16 @@ export async function createProduct(req, res) {
       data: product,
     });
   } catch (error) {
-    console.error("CREATE PRODUCT ERROR:", error);
+    console.error(
+      "CREATE PRODUCT ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Gagal menambahkan produk",
+      message:
+        error.message ||
+        "Gagal menambahkan produk",
     });
   }
 }
@@ -182,31 +193,33 @@ export async function updateProduct(req, res) {
     }
 
     const {
-      name,
-      description,
-      category,
-      price,
-      stock,
-      minStock,
-      unit,
-      supplierId,
-    } = req.body;
+  name,
+  description,
+  category,
+  price,
+  stock,
+  minStock,
+  unit,
+  supplierId,
+  status,
+} = req.body;
 
     const image = req.file
       ? `/uploads/products/${req.file.filename}`
       : undefined;
 
-    const product = await updateProductService(id, {
-      name,
-      description,
-      category,
-      price,
-      stock,
-      minStock,
-      unit,
-      supplierId,
-      image,
-    });
+   const product = await updateProductService(id, {
+  name,
+  description,
+  category,
+  price,
+  stock,
+  minStock,
+  unit,
+  supplierId,
+  image,
+  status,
+});
 
     if (!product) {
       return res.status(404).json({
