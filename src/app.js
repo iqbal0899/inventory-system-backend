@@ -7,6 +7,7 @@ import productRoutes from "./routes/product.route.js";
 import supplierRoutes from "./routes/supplier.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
 import stockRoutes from "./routes/stock.route.js";
+import requestRoutes from "./routes/request.route.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/suppliers", supplierRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/stocks", stockRoutes);
+app.use("/api/v1/requests", requestRoutes);
 
 app.get("/", (req, res) => {
   res.json({
