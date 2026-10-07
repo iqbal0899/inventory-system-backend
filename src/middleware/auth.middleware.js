@@ -4,8 +4,6 @@ export function authentication(req, res, next) {
   try {
     const token = req.cookies?.token;
 
-    console.log("AUTH TOKEN:", token ? "ADA" : "TIDAK ADA");
-
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -15,7 +13,6 @@ export function authentication(req, res, next) {
 
     const decoded = verifyToken(token);
 
-    console.log("AUTH USER:", decoded);
 
     req.user = decoded;
 

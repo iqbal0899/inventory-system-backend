@@ -11,12 +11,10 @@ export async function getStocksService() {
   });
 }
 
-export async function getStockByProductIdService(
-  productId
-) {
-  return prisma.product.findUnique({
+export async function getStockByProductIdService(productId) {
+  const product = await prisma.product.findUnique({
     where: {
-      id: productId,
+      id: Number(productId),
     },
     include: {
       supplier: true,
@@ -32,323 +30,284 @@ export async function getStockByProductIdService(
               role: true,
             },
           },
+          request: {
+            select: {
+              id: true,
+              requestNumber: true,
+            },
+          },
         },
       },
     },
   });
+
+  if (!product) {
+    throw new Error("Produk tidak ditemukan");
+  }
+
+  return product;
 }
 
-export async function stockInService(
+export async function getStockMovementsService({
+  page = 1,
+  limit = 10,
+  productId,
+  type,
+} = {}) {
+  const currentPage = Math.max(
+    1,
+    Number(page) || 1
+  );
+
+  const perPage = Math.min(
+    100,
+    Math.max(1, Number(limit) || 10)
+  );
+
+  const where = {};
+
+  if (productId) {
+    const parsedProductId = Number(productId);
+
+    if (
+      Number.isInteger(parsedProductId) &&
+      parsedProductId > 0
+    ) {
+      where.productId = parsedProductId;
+    }
+  }
+
+  if (type) {
+    const validTypes = [
+      "INITIAL",
+      "IN",
+      "OUT",
+      "ADJUSTMENT",
+    ];
+
+    if (validTypes.includes(type)) {
+      where.type = type;
+    }
+  }
+
+  const skip = (currentPage - 1) * perPage;
+
+  const [movements, total] = await Promise.all([
+    prisma.stockMovement.findMany({
+      where,
+      skip,
+      take: perPage,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            unit: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
+          },
+        },
+        request: {
+          select: {
+            id: true,
+            requestNumber: true,
+          },
+        },
+      },
+    }),
+
+    prisma.stockMovement.count({
+      where,
+    }),
+  ]);
+
+  return {
+    data: movements,
+    pagination: {
+      page: currentPage,
+      limit: perPage,
+      total,
+      totalPages: Math.max(
+        1,
+        Math.ceil(total / perPage)
+      ),
+    },
+  };
+}
+
+export async function stockInService({
   productId,
   quantity,
   note,
-  userId
-) {
-  return prisma.$transaction(async (tx) => {
-    const product =
-      await tx.product.findUnique({
+  userId,
+}) {
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const product = await tx.product.findUnique({
         where: {
-          id: productId,
+          id: Number(productId),
         },
       });
 
-    if (!product) {
-      throw new Error(
-        "Produk tidak ditemukan"
-      );
-    }
+      if (!product) {
+        throw new Error(
+          "Produk tidak ditemukan"
+        );
+      }
 
-    if (product.status !== "ACTIVE") {
-      throw new Error(
-        "Produk tidak aktif. Aktifkan produk terlebih dahulu."
-      );
-    }
+      const stockBefore = product.stock;
+      const stockAfter =
+        stockBefore + Number(quantity);
 
-    if (
-      !Number.isInteger(quantity) ||
-      quantity <= 0
-    ) {
-      throw new Error(
-        "Jumlah stok harus lebih dari 0"
-      );
-    }
+      const updatedProduct =
+        await tx.product.update({
+          where: {
+            id: Number(productId),
+          },
+          data: {
+            stock: stockAfter,
+          },
+        });
 
-    if (
-      !Number.isInteger(userId) ||
-      userId <= 0
-    ) {
-      throw new Error(
-        "User tidak valid"
-      );
-    }
-
-    const user =
-      await tx.user.findUnique({
-        where: {
-          id: userId,
-        },
-      });
-
-    if (!user) {
-      throw new Error(
-        "User tidak ditemukan"
-      );
-    }
-
-    const stockBefore =
-      product.stock;
-
-    const stockAfter =
-      stockBefore + quantity;
-
-    const updatedProduct =
-      await tx.product.update({
-        where: {
-          id: productId,
-        },
+      await tx.stockMovement.create({
         data: {
-          stock: stockAfter,
-        },
-        include: {
-          supplier: true,
+          type: "IN",
+          quantity: Number(quantity),
+          stockBefore,
+          stockAfter,
+          note: note || null,
+          productId: Number(productId),
+          userId: Number(userId),
         },
       });
 
-    await tx.stockMovement.create({
-      data: {
-        type: "IN",
-        quantity,
-        stockBefore,
-        stockAfter,
-        note: note || null,
-        productId,
-        userId,
-      },
-    });
+      return updatedProduct;
+    }
+  );
 
-    return updatedProduct;
-  });
+  return result;
 }
 
-export async function stockOutService(
+export async function stockOutService({
   productId,
   quantity,
   note,
-  userId
-) {
-  return prisma.$transaction(async (tx) => {
-    const product =
-      await tx.product.findUnique({
+  userId,
+}) {
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const product = await tx.product.findUnique({
         where: {
-          id: productId,
+          id: Number(productId),
         },
       });
 
-    if (!product) {
-      throw new Error(
-        "Produk tidak ditemukan"
-      );
-    }
+      if (!product) {
+        throw new Error(
+          "Produk tidak ditemukan"
+        );
+      }
 
-    if (product.status !== "ACTIVE") {
-      throw new Error(
-        "Produk tidak aktif. Aktifkan produk terlebih dahulu."
-      );
-    }
+      const parsedQuantity = Number(quantity);
 
-    if (
-      !Number.isInteger(quantity) ||
-      quantity <= 0
-    ) {
-      throw new Error(
-        "Jumlah stok harus lebih dari 0"
-      );
-    }
+      if (parsedQuantity > product.stock) {
+        throw new Error(
+          "Stok tidak mencukupi"
+        );
+      }
 
-    if (
-      product.stock < quantity
-    ) {
-      throw new Error(
-        "Stok tidak mencukupi"
-      );
-    }
+      const stockBefore = product.stock;
+      const stockAfter =
+        stockBefore - parsedQuantity;
 
-    if (
-      !Number.isInteger(userId) ||
-      userId <= 0
-    ) {
-      throw new Error(
-        "User tidak valid"
-      );
-    }
+      const updatedProduct =
+        await tx.product.update({
+          where: {
+            id: Number(productId),
+          },
+          data: {
+            stock: stockAfter,
+          },
+        });
 
-    const user =
-      await tx.user.findUnique({
-        where: {
-          id: userId,
-        },
-      });
-
-    if (!user) {
-      throw new Error(
-        "User tidak ditemukan"
-      );
-    }
-
-    const stockBefore =
-      product.stock;
-
-    const stockAfter =
-      stockBefore - quantity;
-
-    const updatedProduct =
-      await tx.product.update({
-        where: {
-          id: productId,
-        },
+      await tx.stockMovement.create({
         data: {
-          stock: stockAfter,
-        },
-        include: {
-          supplier: true,
+          type: "OUT",
+          quantity: parsedQuantity,
+          stockBefore,
+          stockAfter,
+          note: note || null,
+          productId: Number(productId),
+          userId: Number(userId),
         },
       });
 
-    await tx.stockMovement.create({
-      data: {
-        type: "OUT",
-        quantity,
-        stockBefore,
-        stockAfter,
-        note: note || null,
-        productId,
-        userId,
-      },
-    });
+      return updatedProduct;
+    }
+  );
 
-    return updatedProduct;
-  });
+  return result;
 }
 
-export async function adjustStockService(
+export async function adjustStockService({
   productId,
   stock,
   note,
-  userId
-) {
-  return prisma.$transaction(async (tx) => {
-    const product =
-      await tx.product.findUnique({
+  userId,
+}) {
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const product = await tx.product.findUnique({
         where: {
-          id: productId,
+          id: Number(productId),
         },
       });
 
-    if (!product) {
-      throw new Error(
-        "Produk tidak ditemukan"
-      );
-    }
+      if (!product) {
+        throw new Error(
+          "Produk tidak ditemukan"
+        );
+      }
 
-    if (product.status !== "ACTIVE") {
-      throw new Error(
-        "Produk tidak aktif. Aktifkan produk terlebih dahulu."
-      );
-    }
+      const stockBefore = product.stock;
+      const stockAfter = Number(stock);
+      const quantity =
+        stockAfter - stockBefore;
 
-    if (
-      !Number.isInteger(stock) ||
-      stock < 0
-    ) {
-      throw new Error(
-        "Stok tidak valid"
-      );
-    }
+      const updatedProduct =
+        await tx.product.update({
+          where: {
+            id: Number(productId),
+          },
+          data: {
+            stock: stockAfter,
+          },
+        });
 
-    if (
-      !Number.isInteger(userId) ||
-      userId <= 0
-    ) {
-      throw new Error(
-        "User tidak valid"
-      );
-    }
-
-    const user =
-      await tx.user.findUnique({
-        where: {
-          id: userId,
-        },
-      });
-
-    if (!user) {
-      throw new Error(
-        "User tidak ditemukan"
-      );
-    }
-
-    const stockBefore =
-      product.stock;
-
-    const stockAfter = stock;
-
-    const updatedProduct =
-      await tx.product.update({
-        where: {
-          id: productId,
-        },
+      await tx.stockMovement.create({
         data: {
-          stock: stockAfter,
-        },
-        include: {
-          supplier: true,
+          type: "ADJUSTMENT",
+          quantity,
+          stockBefore,
+          stockAfter,
+          note: note || null,
+          productId: Number(productId),
+          userId: Number(userId),
         },
       });
 
-    await tx.stockMovement.create({
-      data: {
-        type: "ADJUSTMENT",
-        quantity:
-          stockAfter - stockBefore,
-        stockBefore,
-        stockAfter,
-        note: note || null,
-        productId,
-        userId,
-      },
-    });
+      return updatedProduct;
+    }
+  );
 
-    return updatedProduct;
-  });
-}
-
-export async function getStockMovementsService(
-  productId
-) {
-  return prisma.stockMovement.findMany({
-    where: {
-      productId,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      product: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          unit: true,
-          status: true,
-        },
-      },
-      user: {
-        select: {
-          id: true,
-          username: true,
-          role: true,
-        },
-      },
-    },
-  });
+  return result;
 }

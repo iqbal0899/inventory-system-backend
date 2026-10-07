@@ -131,6 +131,7 @@ export const StockMovementScalarFieldEnum = {
   note: 'note',
   productId: 'productId',
   userId: 'userId',
+  requestId: 'requestId',
   createdAt: 'createdAt'
 } as const
 

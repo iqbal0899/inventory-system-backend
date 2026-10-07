@@ -7,10 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// =====================================================
-// ENUMS
-// =====================================================
-
 enum UserRole {
   SUPER_ADMIN
   ADMIN
@@ -37,21 +33,15 @@ enum RequestStatus {
   CANCELLED
 }
 
-// =====================================================
-// USER
-// =====================================================
-
 model User {
   id       Int      @id @default(autoincrement())
   username String   @unique
   email    String   @unique
   password String
   role     UserRole @default(STAFF)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
   requestsCreated  Request[]       @relation("RequestCreator")
   requestsApproved Request[]       @relation("RequestApprover")
   stockMovements   StockMovement[]
@@ -59,10 +49,6 @@ model User {
   @@index([role])
   @@map("users")
 }
-
-// =====================================================
-// SUPPLIER
-// =====================================================
 
 model Supplier {
   id        Int      @id @default(autoincrement())
@@ -81,9 +67,6 @@ model Supplier {
   @@map("suppliers")
 }
 
-// =====================================================
-// PRODUCT
-// =====================================================
 model Product {
   id          Int           @id @default(autoincrement())
   code        String        @unique
@@ -113,20 +96,13 @@ model Product {
   @@map("products")
 }
 
-// =====================================================
-// STOCK MOVEMENT
-// =====================================================
-
 model StockMovement {
-  id Int @id @default(autoincrement())
-
-  type     StockMovementType
-  quantity Int
-
+  id          Int                @id @default(autoincrement())
+  type        StockMovementType
+  quantity    Int
   stockBefore Int
   stockAfter  Int
-
-  note String?
+  note        String?
 
   productId Int
   product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
@@ -134,18 +110,18 @@ model StockMovement {
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Restrict)
 
+  requestId String?
+  request   Request? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
 
   @@index([productId])
   @@index([userId])
+  @@index([requestId])
   @@index([type])
   @@index([createdAt])
   @@map("stock_movements")
 }
-
-// =====================================================
-// REQUEST
-// =====================================================
 
 model Request {
   id            String        @id @default(cuid())
@@ -153,11 +129,9 @@ model Request {
   status        RequestStatus @default(PENDING)
   note          String?
 
-  // User yang membuat request
   createdById Int
   createdBy   User @relation("RequestCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
-  // User yang melakukan approval
   approvedById Int?
   approvedBy   User? @relation("RequestApprover", fields: [approvedById], references: [id], onDelete: SetNull)
 
@@ -170,8 +144,8 @@ model Request {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  items RequestItem[]
+  items          RequestItem[]
+  stockMovements StockMovement[]
 
   @@index([createdById])
   @@index([approvedById])
@@ -180,10 +154,6 @@ model Request {
   @@index([createdAt])
   @@map("requests")
 }
-
-// =====================================================
-// REQUEST ITEM
-// =====================================================
 
 model RequestItem {
   id       Int     @id @default(autoincrement())

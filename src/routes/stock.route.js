@@ -1,4 +1,5 @@
 import express from "express";
+
 import {
   getStocks,
   getStockByProductId,
@@ -7,6 +8,7 @@ import {
   stockOut,
   adjustStock,
 } from "../controllers/stock.controller.js";
+
 import { authentication } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -14,6 +16,7 @@ const router = express.Router();
 router.use(authentication);
 
 router.get("/", getStocks);
+router.get("/movements", getStockMovements);
 router.get("/:productId", getStockByProductId);
 router.get("/:productId/movements", getStockMovements);
 router.post("/:productId/in", stockIn);

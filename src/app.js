@@ -26,7 +26,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/suppliers", supplierRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
-app.use("/api/v1/stocks", stockRoutes);
+app.use("/api/v1/stock", stockRoutes);
 app.use("/api/v1/requests", requestRoutes);
 
 app.get("/", (req, res) => {

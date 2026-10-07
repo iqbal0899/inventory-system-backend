@@ -117,18 +117,35 @@ export async function createRequest(req, res) {
 
 export async function approveRequest(req, res) {
   try {
-    const id = Number(req.params.id);
+    const id = req.params.id;
+    const approvedById = req.user.userId;
 
     if (!id) {
       return res.status(400).json({
         success: false,
-        message: "ID request tidak valid",
+        message: "Request ID wajib diisi",
       });
     }
 
+    if (!approvedById) {
+      return res.status(401).json({
+        success: false,
+        message: "User belum terautentikasi",
+      });
+    }
+
+    console.log("APPROVE REQUEST");
+    console.log("REQUEST ID:", id);
+    console.log("APPROVER ID:", approvedById);
+
     const result = await approveRequestService(
       id,
-      req.user?.id || null
+      approvedById
+    );
+
+    console.log(
+      "APPROVE SUCCESS:",
+      result.id
     );
 
     return res.status(200).json({
@@ -137,11 +154,16 @@ export async function approveRequest(req, res) {
       data: result,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "APPROVE ERROR:",
+      error
+    );
 
     return res.status(400).json({
       success: false,
-      message: error.message || "Gagal menyetujui request",
+      message:
+        error.message ||
+        "Gagal menyetujui request",
     });
   }
 }

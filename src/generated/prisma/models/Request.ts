@@ -276,6 +276,7 @@ export type RequestWhereInput = {
   approvedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   supplier?: Prisma.XOR<Prisma.SupplierNullableScalarRelationFilter, Prisma.SupplierWhereInput> | null
   items?: Prisma.RequestItemListRelationFilter
+  stockMovements?: Prisma.StockMovementListRelationFilter
 }
 
 export type RequestOrderByWithRelationInput = {
@@ -294,6 +295,7 @@ export type RequestOrderByWithRelationInput = {
   approvedBy?: Prisma.UserOrderByWithRelationInput
   supplier?: Prisma.SupplierOrderByWithRelationInput
   items?: Prisma.RequestItemOrderByRelationAggregateInput
+  stockMovements?: Prisma.StockMovementOrderByRelationAggregateInput
 }
 
 export type RequestWhereUniqueInput = Prisma.AtLeast<{
@@ -315,6 +317,7 @@ export type RequestWhereUniqueInput = Prisma.AtLeast<{
   approvedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   supplier?: Prisma.XOR<Prisma.SupplierNullableScalarRelationFilter, Prisma.SupplierWhereInput> | null
   items?: Prisma.RequestItemListRelationFilter
+  stockMovements?: Prisma.StockMovementListRelationFilter
 }, "id" | "requestNumber">
 
 export type RequestOrderByWithAggregationInput = {
@@ -366,6 +369,7 @@ export type RequestCreateInput = {
   approvedBy?: Prisma.UserCreateNestedOneWithoutRequestsApprovedInput
   supplier?: Prisma.SupplierCreateNestedOneWithoutRequestsInput
   items?: Prisma.RequestItemCreateNestedManyWithoutRequestInput
+  stockMovements?: Prisma.StockMovementCreateNestedManyWithoutRequestInput
 }
 
 export type RequestUncheckedCreateInput = {
@@ -381,6 +385,7 @@ export type RequestUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.RequestItemUncheckedCreateNestedManyWithoutRequestInput
+  stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutRequestInput
 }
 
 export type RequestUpdateInput = {
@@ -396,6 +401,7 @@ export type RequestUpdateInput = {
   approvedBy?: Prisma.UserUpdateOneWithoutRequestsApprovedNestedInput
   supplier?: Prisma.SupplierUpdateOneWithoutRequestsNestedInput
   items?: Prisma.RequestItemUpdateManyWithoutRequestNestedInput
+  stockMovements?: Prisma.StockMovementUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestUncheckedUpdateInput = {
@@ -411,6 +417,7 @@ export type RequestUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.RequestItemUncheckedUpdateManyWithoutRequestNestedInput
+  stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestCreateManyInput = {
@@ -460,6 +467,11 @@ export type RequestListRelationFilter = {
 
 export type RequestOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type RequestNullableScalarRelationFilter = {
+  is?: Prisma.RequestWhereInput | null
+  isNot?: Prisma.RequestWhereInput | null
 }
 
 export type RequestCountOrderByAggregateInput = {
@@ -647,6 +659,22 @@ export type RequestUncheckedUpdateManyWithoutSupplierNestedInput = {
   deleteMany?: Prisma.RequestScalarWhereInput | Prisma.RequestScalarWhereInput[]
 }
 
+export type RequestCreateNestedOneWithoutStockMovementsInput = {
+  create?: Prisma.XOR<Prisma.RequestCreateWithoutStockMovementsInput, Prisma.RequestUncheckedCreateWithoutStockMovementsInput>
+  connectOrCreate?: Prisma.RequestCreateOrConnectWithoutStockMovementsInput
+  connect?: Prisma.RequestWhereUniqueInput
+}
+
+export type RequestUpdateOneWithoutStockMovementsNestedInput = {
+  create?: Prisma.XOR<Prisma.RequestCreateWithoutStockMovementsInput, Prisma.RequestUncheckedCreateWithoutStockMovementsInput>
+  connectOrCreate?: Prisma.RequestCreateOrConnectWithoutStockMovementsInput
+  upsert?: Prisma.RequestUpsertWithoutStockMovementsInput
+  disconnect?: Prisma.RequestWhereInput | boolean
+  delete?: Prisma.RequestWhereInput | boolean
+  connect?: Prisma.RequestWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RequestUpdateToOneWithWhereWithoutStockMovementsInput, Prisma.RequestUpdateWithoutStockMovementsInput>, Prisma.RequestUncheckedUpdateWithoutStockMovementsInput>
+}
+
 export type EnumRequestStatusFieldUpdateOperationsInput = {
   set?: $Enums.RequestStatus
 }
@@ -681,6 +709,7 @@ export type RequestCreateWithoutCreatedByInput = {
   approvedBy?: Prisma.UserCreateNestedOneWithoutRequestsApprovedInput
   supplier?: Prisma.SupplierCreateNestedOneWithoutRequestsInput
   items?: Prisma.RequestItemCreateNestedManyWithoutRequestInput
+  stockMovements?: Prisma.StockMovementCreateNestedManyWithoutRequestInput
 }
 
 export type RequestUncheckedCreateWithoutCreatedByInput = {
@@ -695,6 +724,7 @@ export type RequestUncheckedCreateWithoutCreatedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.RequestItemUncheckedCreateNestedManyWithoutRequestInput
+  stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutRequestInput
 }
 
 export type RequestCreateOrConnectWithoutCreatedByInput = {
@@ -719,6 +749,7 @@ export type RequestCreateWithoutApprovedByInput = {
   createdBy: Prisma.UserCreateNestedOneWithoutRequestsCreatedInput
   supplier?: Prisma.SupplierCreateNestedOneWithoutRequestsInput
   items?: Prisma.RequestItemCreateNestedManyWithoutRequestInput
+  stockMovements?: Prisma.StockMovementCreateNestedManyWithoutRequestInput
 }
 
 export type RequestUncheckedCreateWithoutApprovedByInput = {
@@ -733,6 +764,7 @@ export type RequestUncheckedCreateWithoutApprovedByInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.RequestItemUncheckedCreateNestedManyWithoutRequestInput
+  stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutRequestInput
 }
 
 export type RequestCreateOrConnectWithoutApprovedByInput = {
@@ -806,6 +838,7 @@ export type RequestCreateWithoutSupplierInput = {
   createdBy: Prisma.UserCreateNestedOneWithoutRequestsCreatedInput
   approvedBy?: Prisma.UserCreateNestedOneWithoutRequestsApprovedInput
   items?: Prisma.RequestItemCreateNestedManyWithoutRequestInput
+  stockMovements?: Prisma.StockMovementCreateNestedManyWithoutRequestInput
 }
 
 export type RequestUncheckedCreateWithoutSupplierInput = {
@@ -820,6 +853,7 @@ export type RequestUncheckedCreateWithoutSupplierInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.RequestItemUncheckedCreateNestedManyWithoutRequestInput
+  stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutRequestInput
 }
 
 export type RequestCreateOrConnectWithoutSupplierInput = {
@@ -848,6 +882,82 @@ export type RequestUpdateManyWithWhereWithoutSupplierInput = {
   data: Prisma.XOR<Prisma.RequestUpdateManyMutationInput, Prisma.RequestUncheckedUpdateManyWithoutSupplierInput>
 }
 
+export type RequestCreateWithoutStockMovementsInput = {
+  id?: string
+  requestNumber: string
+  status?: $Enums.RequestStatus
+  note?: string | null
+  approvedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  createdBy: Prisma.UserCreateNestedOneWithoutRequestsCreatedInput
+  approvedBy?: Prisma.UserCreateNestedOneWithoutRequestsApprovedInput
+  supplier?: Prisma.SupplierCreateNestedOneWithoutRequestsInput
+  items?: Prisma.RequestItemCreateNestedManyWithoutRequestInput
+}
+
+export type RequestUncheckedCreateWithoutStockMovementsInput = {
+  id?: string
+  requestNumber: string
+  status?: $Enums.RequestStatus
+  note?: string | null
+  createdById: number
+  approvedById?: number | null
+  supplierId?: number | null
+  approvedAt?: Date | string | null
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.RequestItemUncheckedCreateNestedManyWithoutRequestInput
+}
+
+export type RequestCreateOrConnectWithoutStockMovementsInput = {
+  where: Prisma.RequestWhereUniqueInput
+  create: Prisma.XOR<Prisma.RequestCreateWithoutStockMovementsInput, Prisma.RequestUncheckedCreateWithoutStockMovementsInput>
+}
+
+export type RequestUpsertWithoutStockMovementsInput = {
+  update: Prisma.XOR<Prisma.RequestUpdateWithoutStockMovementsInput, Prisma.RequestUncheckedUpdateWithoutStockMovementsInput>
+  create: Prisma.XOR<Prisma.RequestCreateWithoutStockMovementsInput, Prisma.RequestUncheckedCreateWithoutStockMovementsInput>
+  where?: Prisma.RequestWhereInput
+}
+
+export type RequestUpdateToOneWithWhereWithoutStockMovementsInput = {
+  where?: Prisma.RequestWhereInput
+  data: Prisma.XOR<Prisma.RequestUpdateWithoutStockMovementsInput, Prisma.RequestUncheckedUpdateWithoutStockMovementsInput>
+}
+
+export type RequestUpdateWithoutStockMovementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutRequestsCreatedNestedInput
+  approvedBy?: Prisma.UserUpdateOneWithoutRequestsApprovedNestedInput
+  supplier?: Prisma.SupplierUpdateOneWithoutRequestsNestedInput
+  items?: Prisma.RequestItemUpdateManyWithoutRequestNestedInput
+}
+
+export type RequestUncheckedUpdateWithoutStockMovementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdById?: Prisma.IntFieldUpdateOperationsInput | number
+  approvedById?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  supplierId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.RequestItemUncheckedUpdateManyWithoutRequestNestedInput
+}
+
 export type RequestCreateWithoutItemsInput = {
   id?: string
   requestNumber: string
@@ -860,6 +970,7 @@ export type RequestCreateWithoutItemsInput = {
   createdBy: Prisma.UserCreateNestedOneWithoutRequestsCreatedInput
   approvedBy?: Prisma.UserCreateNestedOneWithoutRequestsApprovedInput
   supplier?: Prisma.SupplierCreateNestedOneWithoutRequestsInput
+  stockMovements?: Prisma.StockMovementCreateNestedManyWithoutRequestInput
 }
 
 export type RequestUncheckedCreateWithoutItemsInput = {
@@ -874,6 +985,7 @@ export type RequestUncheckedCreateWithoutItemsInput = {
   completedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutRequestInput
 }
 
 export type RequestCreateOrConnectWithoutItemsInput = {
@@ -904,6 +1016,7 @@ export type RequestUpdateWithoutItemsInput = {
   createdBy?: Prisma.UserUpdateOneRequiredWithoutRequestsCreatedNestedInput
   approvedBy?: Prisma.UserUpdateOneWithoutRequestsApprovedNestedInput
   supplier?: Prisma.SupplierUpdateOneWithoutRequestsNestedInput
+  stockMovements?: Prisma.StockMovementUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestUncheckedUpdateWithoutItemsInput = {
@@ -918,6 +1031,7 @@ export type RequestUncheckedUpdateWithoutItemsInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestCreateManyCreatedByInput = {
@@ -958,6 +1072,7 @@ export type RequestUpdateWithoutCreatedByInput = {
   approvedBy?: Prisma.UserUpdateOneWithoutRequestsApprovedNestedInput
   supplier?: Prisma.SupplierUpdateOneWithoutRequestsNestedInput
   items?: Prisma.RequestItemUpdateManyWithoutRequestNestedInput
+  stockMovements?: Prisma.StockMovementUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestUncheckedUpdateWithoutCreatedByInput = {
@@ -972,6 +1087,7 @@ export type RequestUncheckedUpdateWithoutCreatedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.RequestItemUncheckedUpdateManyWithoutRequestNestedInput
+  stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestUncheckedUpdateManyWithoutCreatedByInput = {
@@ -999,6 +1115,7 @@ export type RequestUpdateWithoutApprovedByInput = {
   createdBy?: Prisma.UserUpdateOneRequiredWithoutRequestsCreatedNestedInput
   supplier?: Prisma.SupplierUpdateOneWithoutRequestsNestedInput
   items?: Prisma.RequestItemUpdateManyWithoutRequestNestedInput
+  stockMovements?: Prisma.StockMovementUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestUncheckedUpdateWithoutApprovedByInput = {
@@ -1013,6 +1130,7 @@ export type RequestUncheckedUpdateWithoutApprovedByInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.RequestItemUncheckedUpdateManyWithoutRequestNestedInput
+  stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestUncheckedUpdateManyWithoutApprovedByInput = {
@@ -1053,6 +1171,7 @@ export type RequestUpdateWithoutSupplierInput = {
   createdBy?: Prisma.UserUpdateOneRequiredWithoutRequestsCreatedNestedInput
   approvedBy?: Prisma.UserUpdateOneWithoutRequestsApprovedNestedInput
   items?: Prisma.RequestItemUpdateManyWithoutRequestNestedInput
+  stockMovements?: Prisma.StockMovementUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestUncheckedUpdateWithoutSupplierInput = {
@@ -1067,6 +1186,7 @@ export type RequestUncheckedUpdateWithoutSupplierInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.RequestItemUncheckedUpdateManyWithoutRequestNestedInput
+  stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutRequestNestedInput
 }
 
 export type RequestUncheckedUpdateManyWithoutSupplierInput = {
@@ -1089,10 +1209,12 @@ export type RequestUncheckedUpdateManyWithoutSupplierInput = {
 
 export type RequestCountOutputType = {
   items: number
+  stockMovements: number
 }
 
 export type RequestCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   items?: boolean | RequestCountOutputTypeCountItemsArgs
+  stockMovements?: boolean | RequestCountOutputTypeCountStockMovementsArgs
 }
 
 /**
@@ -1112,6 +1234,13 @@ export type RequestCountOutputTypeCountItemsArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.RequestItemWhereInput
 }
 
+/**
+ * RequestCountOutputType without action
+ */
+export type RequestCountOutputTypeCountStockMovementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.StockMovementWhereInput
+}
+
 
 export type RequestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1129,6 +1258,7 @@ export type RequestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   approvedBy?: boolean | Prisma.Request$approvedByArgs<ExtArgs>
   supplier?: boolean | Prisma.Request$supplierArgs<ExtArgs>
   items?: boolean | Prisma.Request$itemsArgs<ExtArgs>
+  stockMovements?: boolean | Prisma.Request$stockMovementsArgs<ExtArgs>
   _count?: boolean | Prisma.RequestCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["request"]>
 
@@ -1186,6 +1316,7 @@ export type RequestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   approvedBy?: boolean | Prisma.Request$approvedByArgs<ExtArgs>
   supplier?: boolean | Prisma.Request$supplierArgs<ExtArgs>
   items?: boolean | Prisma.Request$itemsArgs<ExtArgs>
+  stockMovements?: boolean | Prisma.Request$stockMovementsArgs<ExtArgs>
   _count?: boolean | Prisma.RequestCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RequestIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1206,6 +1337,7 @@ export type $RequestPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     approvedBy: Prisma.$UserPayload<ExtArgs> | null
     supplier: Prisma.$SupplierPayload<ExtArgs> | null
     items: Prisma.$RequestItemPayload<ExtArgs>[]
+    stockMovements: Prisma.$StockMovementPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1617,6 +1749,7 @@ export interface Prisma__RequestClient<T, Null = never, ExtArgs extends runtime.
   approvedBy<T extends Prisma.Request$approvedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Request$approvedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   supplier<T extends Prisma.Request$supplierArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Request$supplierArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   items<T extends Prisma.Request$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Request$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RequestItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  stockMovements<T extends Prisma.Request$stockMovementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Request$stockMovementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StockMovementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2117,6 +2250,30 @@ export type Request$itemsArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.RequestItemScalarFieldEnum | Prisma.RequestItemScalarFieldEnum[]
+}
+
+/**
+ * Request.stockMovements
+ */
+export type Request$stockMovementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the StockMovement
+   */
+  select?: Prisma.StockMovementSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the StockMovement
+   */
+  omit?: Prisma.StockMovementOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StockMovementInclude<ExtArgs> | null
+  where?: Prisma.StockMovementWhereInput
+  orderBy?: Prisma.StockMovementOrderByWithRelationInput | Prisma.StockMovementOrderByWithRelationInput[]
+  cursor?: Prisma.StockMovementWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.StockMovementScalarFieldEnum | Prisma.StockMovementScalarFieldEnum[]
 }
 
 /**
