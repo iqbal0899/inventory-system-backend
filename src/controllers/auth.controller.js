@@ -44,12 +44,13 @@ export async function login(req, res) {
     // COOKIE JWT
     // ==========================================
 
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 12 * 60 * 60 * 1000,
-    });
+   res.cookie("inventory_token", token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 24 * 60 * 60 * 1000,
+  path: "/",
+});
 
     return successResponse(
       res,

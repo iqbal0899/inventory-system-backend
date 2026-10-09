@@ -298,233 +298,199 @@ export async function createRequestService({
   return request;
 }
 
-export async function approveRequestService(
-  id,
-  approvedById
-) {
-  if (!approvedById) {
-    throw new Error(
-      "User yang menyetujui request tidak ditemukan"
-    );
-  }
+export async function approveRequestService(id, approvedById) {
+if (!approvedById) {
+throw new Error("User yang menyetujui request tidak ditemukan");
+}
 
-  return prisma.$transaction(
-    async (tx) => {
-      const request =
-        await tx.request.findUnique({
-          where: {
-            id,
-          },
-          include: {
-            items: {
-              include: {
-                product: {
-                  select: {
-                    id: true,
-                    code: true,
-                    name: true,
-                    stock: true,
-                    unit: true,
-                    status: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+const approvedRequest = await prisma.$transaction(async (tx) => {
+const request = await tx.request.findUnique({
+where: { id },
+include: {
+items: {
+include: {
+product: {
+select: {
+id: true,
+code: true,
+name: true,
+stock: true,
+unit: true,
+status: true,
+},
+},
+},
+},
+},
+});
 
-      if (!request) {
-        throw new Error(
-          "Request tidak ditemukan"
-        );
-      }
+if (!request) {
+  throw new Error("Request tidak ditemukan");
+}
 
-      if (
-        request.status !== "PENDING"
-      ) {
-        throw new Error(
-          "Request hanya dapat disetujui ketika status masih pending"
-        );
-      }
-
-      if (
-        !request.items ||
-        request.items.length === 0
-      ) {
-        throw new Error(
-          "Request tidak memiliki produk"
-        );
-      }
-
-      for (const item of request.items) {
-        const product =
-          item.product;
-
-        if (!product) {
-          throw new Error(
-            `Produk dengan ID ${item.productId} tidak ditemukan`
-          );
-        }
-
-        if (
-          product.status !== "ACTIVE"
-        ) {
-          throw new Error(
-            `Produk ${product.name} tidak aktif`
-          );
-        }
-
-        if (
-          product.stock <
-          item.quantity
-        ) {
-          throw new Error(
-            `Stok ${product.name} tidak mencukupi. Stok tersedia ${product.stock} ${product.unit}, request ${item.quantity} ${product.unit}`
-          );
-        }
-      }
-
-      for (const item of request.items) {
-        const product =
-          await tx.product.findUnique({
-            where: {
-              id: item.productId,
-            },
-            select: {
-              id: true,
-              name: true,
-              stock: true,
-              unit: true,
-              status: true,
-            },
-          });
-
-        if (!product) {
-          throw new Error(
-            `Produk ${item.productId} tidak ditemukan`
-          );
-        }
-
-        if (
-          product.status !== "ACTIVE"
-        ) {
-          throw new Error(
-            `Produk ${product.name} tidak aktif`
-          );
-        }
-
-        const stockBefore =
-          product.stock;
-
-        const updatedProduct =
-          await tx.product.updateMany({
-            where: {
-              id: item.productId,
-              status: "ACTIVE",
-              stock: {
-                gte: item.quantity,
-              },
-            },
-            data: {
-              stock: {
-                decrement:
-                  item.quantity,
-              },
-            },
-          });
-
-        if (
-          updatedProduct.count !== 1
-        ) {
-          throw new Error(
-            `Stok ${product.name} tidak mencukupi`
-          );
-        }
-
-        const stockAfter =
-          stockBefore -
-          item.quantity;
-
-        await tx.stockMovement.create({
-          data: {
-            type: "OUT",
-
-            quantity:
-              -item.quantity,
-
-            stockBefore,
-
-            stockAfter,
-
-            note: "Request disetujui",
-
-            productId:
-              item.productId,
-
-            userId:
-              Number(approvedById),
-
-            requestId:
-              request.id,
-          },
-        });
-      }
-
-      const approvedRequest =
-        await tx.request.update({
-          where: {
-            id,
-          },
-          data: {
-            status: "APPROVED",
-
-            approvedById:
-              Number(approvedById),
-
-            approvedAt:
-              new Date(),
-          },
-
-          include: {
-            createdBy: {
-              select: {
-                id: true,
-                username: true,
-                role: true,
-              },
-            },
-
-            approvedBy: {
-              select: {
-                id: true,
-                username: true,
-                role: true,
-              },
-            },
-
-            supplier: true,
-
-            items: {
-              include: {
-                product: {
-                  select: {
-                    id: true,
-                    code: true,
-                    name: true,
-                    stock: true,
-                    unit: true,
-                    status: true,
-                  },
-                },
-              },
-            },
-          },
-        });
-
-      return approvedRequest;
-    }
+if (request.status !== "PENDING") {
+  throw new Error(
+    "Request hanya dapat disetujui ketika status masih pending"
   );
 }
+
+if (!request.items?.length) {
+  throw new Error("Request tidak memiliki produk");
+}
+
+for (const item of request.items) {
+  if (!item.product || item.product.status !== "ACTIVE") {
+    throw new Error(`Produk ${item.product?.name || item.productId} tidak aktif atau tidak ditemukan`);
+  }
+
+  if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+    throw new Error(`Jumlah produk ${item.product.name} tidak valid`);
+  }
+
+  if (item.product.stock < item.quantity) {
+    throw new Error(
+      `Stok ${item.product.name} tidak mencukupi. Stok tersedia ${item.product.stock} ${item.product.unit}, request ${item.quantity} ${item.product.unit}`
+    );
+  }
+}
+
+for (const item of request.items) {
+  const updated = await tx.product.updateMany({
+    where: {
+      id: item.productId,
+      status: "ACTIVE",
+      stock: { gte: item.quantity },
+    },
+    data: {
+      stock: { decrement: item.quantity },
+    },
+  });
+
+  if (updated.count !== 1) {
+    throw new Error(`Stok ${item.product.name} tidak mencukupi`);
+  }
+
+  await tx.stockMovement.create({
+    data: {
+      type: "OUT",
+      quantity: -item.quantity,
+      stockBefore: item.product.stock,
+      stockAfter: item.product.stock - item.quantity,
+      note: "Request disetujui",
+      productId: item.productId,
+      userId: Number(approvedById),
+      requestId: request.id,
+    },
+  });
+}
+
+return tx.request.update({
+  where: { id },
+  data: {
+    status: "APPROVED",
+    approvedById: Number(approvedById),
+    approvedAt: new Date(),
+  },
+  include: {
+    createdBy: {
+      select: { id: true, username: true, role: true },
+    },
+    approvedBy: {
+      select: { id: true, username: true, role: true },
+    },
+    supplier: true,
+    items: {
+      include: {
+        product: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            stock: true,
+            unit: true,
+            status: true,
+          },
+        },
+      },
+    },
+  },
+});
+
+});
+
+const secret = process.env.INVENTORY_TRANSFER_SECRET;
+const posApiUrl = process.env.POS_API_URL;
+
+if (!secret || !posApiUrl) {
+console.error("Konfigurasi transfer POS belum lengkap");
+
+return {
+  ...approvedRequest,
+  transfer: {
+    sent: false,
+    message: "Request disetujui, tetapi konfigurasi transfer POS belum lengkap",
+  },
+};
+
+}
+
+try {
+const response = await fetch(
+`${posApiUrl.replace(/\/$/, "")}/api/v1/inventory/stock-recive`,
+{
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"x-inventory-transfer-secret": secret,
+},
+body: JSON.stringify({
+requestId: approvedRequest.requestNumber,
+items: approvedRequest.items.map((item) => ({
+productCode: item.product.code,
+quantity: item.quantity,
+})),
+}),
+signal: AbortSignal.timeout(10000),
+}
+);
+
+const result = await response.json().catch(() => null);
+
+if (!response.ok || !result?.success) {
+  console.error("Transfer ke POS gagal:", result);
+
+  return {
+    ...approvedRequest,
+    transfer: {
+      sent: false,
+      message: result?.message || `POS merespons dengan status HTTP ${response.status}`,
+    },
+  };
+}
+
+return {
+  ...approvedRequest,
+  transfer: {
+    sent: true,
+    message: result.message || "Transfer berhasil dikirim ke POS",
+    data: result.data,
+  },
+};
+
+} catch (error) {
+console.error("Pengiriman transfer ke POS gagal:", error);
+
+return {
+  ...approvedRequest,
+  transfer: {
+    sent: false,
+    message: "Request sudah disetujui, tetapi POS tidak dapat dijangkau. Transfer perlu dicoba kembali.",
+  },
+};
+
+}
+}
+
 
 export async function rejectRequestService(
   id,

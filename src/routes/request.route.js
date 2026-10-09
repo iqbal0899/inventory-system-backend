@@ -10,14 +10,16 @@ import {
 } from "../controllers/request.controller.js";
 
 import { authentication } from "../middleware/auth.middleware.js";
+import { posServiceAuthentication } from "../middleware/posServiceAuth.middleware.js";
 
 const router = express.Router();
+
+router.post("/", posServiceAuthentication, createRequest);
 
 router.use(authentication);
 
 router.get("/", getRequests);
 router.get("/:id", getRequestById);
-router.post("/", createRequest);
 router.patch("/:id/approve", approveRequest);
 router.patch("/:id/reject", rejectRequest);
 router.delete("/:id", deleteRequest);
