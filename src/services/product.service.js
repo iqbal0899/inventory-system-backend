@@ -1,356 +1,272 @@
 import { prisma } from "../config/database.js";
 
-// ==========================================
-// CREATE PRODUCT
-// ==========================================
+async function validateSupplier(supplierId) {
+  if (
+    supplierId === undefined ||
+    supplierId === null ||
+    supplierId === ""
+  ) {
+    return null;
+  }
 
-export async function createProductService(data) {
-  console.log(
-    "========== CREATE PRODUCT SERVICE =========="
-  );
+  const parsedSupplierId = Number(supplierId);
 
-  console.log("DATA:", data);
+  if (
+    !Number.isInteger(parsedSupplierId) ||
+    parsedSupplierId <= 0
+  ) {
+    throw new Error("Supplier tidak valid");
+  }
 
-  const product = await prisma.$transaction(
-    async (tx) => {
-      // ==============================
-      // VALIDASI SUPPLIER
-      // ==============================
+  const supplier = await prisma.supplier.findUnique({
+    where: {
+      id: parsedSupplierId,
+    },
+  });
 
-      let supplierId = null;
+  if (!supplier) {
+    throw new Error("Supplier yang dipilih tidak ditemukan");
+  }
 
-      if (
-        data.supplierId !== undefined &&
-        data.supplierId !== null &&
-        data.supplierId !== ""
-      ) {
-        supplierId = Number(data.supplierId);
-
-        if (
-          !Number.isInteger(supplierId) ||
-          supplierId <= 0
-        ) {
-          throw new Error("Supplier tidak valid");
-        }
-
-        const supplier =
-          await tx.supplier.findUnique({
-            where: {
-              id: supplierId,
-            },
-          });
-
-        if (!supplier) {
-          throw new Error(
-            "Supplier yang dipilih tidak ditemukan"
-          );
-        }
-      }
-
-      // ==============================
-      // CREATE PRODUCT
-      // ==============================
-
-      const createdProduct =
-        await tx.product.create({
-          data: {
-            // Kode sementara
-            code: `TEMP-${Date.now()}`,
-
-            name: data.name?.trim(),
-
-            description:
-              data.description?.trim() || null,
-
-            // Kategori sekarang STRING
-            category:
-              data.category?.trim() || null,
-
-            image:
-              data.image || null,
-
-            price:
-              Number(data.price),
-
-            stock:
-              Number(data.stock ?? 0),
-
-            minStock:
-              Number(data.minStock ?? 0),
-
-            unit:
-              data.unit || "pcs",
-
-            status:
-  data.status === "INACTIVE"
-    ? "INACTIVE"
-    : "ACTIVE",
-
-            supplierId,
-          },
-        });
-
-      console.log(
-        "PRODUCT CREATED:",
-        createdProduct
-      );
-
-      // ==============================
-      // GENERATE PRODUCT CODE
-      // ==============================
-
-      const code =
-        `PRD-${String(
-          createdProduct.id
-        ).padStart(6, "0")}`;
-
-      // ==============================
-      // UPDATE CODE
-      // ==============================
-
-      const updatedProduct =
-        await tx.product.update({
-          where: {
-            id: createdProduct.id,
-          },
-
-          data: {
-            code,
-          },
-
-          include: {
-            supplier: true,
-          },
-        });
-
-      console.log(
-        "PRODUCT FINAL:",
-        updatedProduct
-      );
-
-      return updatedProduct;
-    }
-  );
-
-  return product;
+  return parsedSupplierId;
 }
 
-// ==========================================
-// GET ACTIVE PRODUCTS
-// ==========================================
+function validateProductNumbers(data) {
+  const price = Number(data.price);
+  const stock = Number(data.stock ?? 0);
+  const minStock = Number(data.minStock ?? 0);
+
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error("Harga produk tidak valid");
+  }
+
+  if (!Number.isSafeInteger(stock) || stock < 0) {
+    throw new Error("Stok produk tidak valid");
+  }
+
+  if (!Number.isSafeInteger(minStock) || minStock < 0) {
+    throw new Error("Minimum stok tidak valid");
+  }
+
+  return {
+    price,
+    stock,
+    minStock,
+  };
+}
+
+function normalizeStatus(status) {
+  const normalizedStatus = status ?? "ACTIVE";
+
+  if (
+    normalizedStatus !== "ACTIVE" &&
+    normalizedStatus !== "INACTIVE"
+  ) {
+    throw new Error("Status produk tidak valid");
+  }
+
+  return normalizedStatus;
+}
+
+function getCategory(data) {
+  const value =
+    data.category !== undefined
+      ? data.category
+      : data.categoryId;
+
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const category = String(value).trim();
+
+  return category || null;
+}
+
+export async function createProductService(data) {
+  return prisma.$transaction(async (tx) => {
+    const name = data.name?.trim();
+
+    if (!name) {
+      throw new Error("Nama produk wajib diisi");
+    }
+
+    const supplierId = await validateSupplier(
+      data.supplierId
+    );
+
+    const { price, stock, minStock } =
+      validateProductNumbers(data);
+
+    const status = normalizeStatus(data.status);
+
+    const createdProduct = await tx.product.create({
+      data: {
+        code: `TEMP-${Date.now()}`,
+        name,
+        description: data.description?.trim() || null,
+        category: getCategory(data),
+        image: data.image || null,
+        price,
+        stock,
+        minStock,
+        unit: data.unit?.trim() || "pcs",
+        status,
+        supplierId,
+      },
+    });
+
+    const code = `PRD-${String(
+      createdProduct.id
+    ).padStart(6, "0")}`;
+
+    return tx.product.update({
+      where: {
+        id: createdProduct.id,
+      },
+      data: {
+        code,
+      },
+      include: {
+        supplier: true,
+      },
+    });
+  });
+}
 
 export async function getProductsService() {
   return prisma.product.findMany({
     orderBy: {
       createdAt: "desc",
     },
-
     include: {
       supplier: true,
     },
   });
 }
-
-// ==========================================
-// GET PRODUCT BY ID
-// ==========================================
 
 export async function getProductByIdService(id) {
   return prisma.product.findUnique({
     where: {
       id,
     },
-
     include: {
       supplier: true,
     },
   });
 }
 
-// ==========================================
-// UPDATE PRODUCT
-// ==========================================
-
-export async function updateProductService(
-  id,
-  data
-) {
-  const existingProduct =
-    await prisma.product.findUnique({
+export async function updateProductService(id, data) {
+  return prisma.$transaction(async (tx) => {
+    const existingProduct = await tx.product.findUnique({
       where: {
         id,
       },
     });
 
-  if (!existingProduct) {
-    return null;
-  }
+    if (!existingProduct) {
+      return null;
+    }
 
-  // ==============================
-  // VALIDASI SUPPLIER
-  // ==============================
+    const updateData = {};
 
-  let supplierId =
-    existingProduct.supplierId;
+    if (data.name !== undefined) {
+      const name = data.name.trim();
 
-  if (data.supplierId !== undefined) {
+      if (!name) {
+        throw new Error("Nama produk wajib diisi");
+      }
+
+      updateData.name = name;
+    }
+
+    if (data.description !== undefined) {
+      updateData.description =
+        data.description?.trim() || null;
+    }
+
     if (
-      data.supplierId === null ||
-      data.supplierId === ""
+      data.category !== undefined ||
+      data.categoryId !== undefined
     ) {
-      supplierId = null;
-    } else {
-      supplierId =
-        Number(data.supplierId);
+      updateData.category = getCategory(data);
+    }
+
+    if (data.image !== undefined) {
+      updateData.image = data.image || null;
+    }
+
+    if (data.price !== undefined) {
+      const price = Number(data.price);
+
+      if (!Number.isFinite(price) || price < 0) {
+        throw new Error("Harga produk tidak valid");
+      }
+
+      updateData.price = price;
+    }
+
+    if (data.stock !== undefined) {
+      const stock = Number(data.stock);
+
+      if (!Number.isSafeInteger(stock) || stock < 0) {
+        throw new Error("Stok produk tidak valid");
+      }
+
+      updateData.stock = stock;
+    }
+
+    if (data.minStock !== undefined) {
+      const minStock = Number(data.minStock);
 
       if (
-        !Number.isInteger(supplierId) ||
-        supplierId <= 0
+        !Number.isSafeInteger(minStock) ||
+        minStock < 0
       ) {
-        throw new Error(
-          "Supplier tidak valid"
-        );
+        throw new Error("Minimum stok tidak valid");
       }
 
-      const supplier =
-        await prisma.supplier.findUnique({
-          where: {
-            id: supplierId,
-          },
-        });
-
-      if (!supplier) {
-        throw new Error(
-          "Supplier yang dipilih tidak ditemukan"
-        );
-      }
+      updateData.minStock = minStock;
     }
-  }
 
-  // ==============================
-  // DATA UPDATE
-  // ==============================
+    if (data.unit !== undefined) {
+      updateData.unit = data.unit.trim() || "pcs";
+    }
 
-const updateData = {
-  name:
-    data.name !== undefined
-      ? data.name.trim()
-      : existingProduct.name,
+    if (data.status !== undefined) {
+      updateData.status = normalizeStatus(data.status);
+    }
 
-  description:
-    data.description !== undefined
-      ? data.description?.trim() || null
-      : existingProduct.description,
+    if (data.supplierId !== undefined) {
+      updateData.supplierId = await validateSupplier(
+        data.supplierId
+      );
+    }
 
-  category:
-    data.category !== undefined
-      ? data.category?.trim() || null
-      : existingProduct.category,
-
-  image:
-    data.image !== undefined
-      ? data.image
-      : existingProduct.image,
-
-  price:
-    data.price !== undefined
-      ? Number(data.price)
-      : existingProduct.price,
-
-  stock:
-    data.stock !== undefined
-      ? Number(data.stock)
-      : existingProduct.stock,
-
-  minStock:
-    data.minStock !== undefined
-      ? Number(data.minStock)
-      : existingProduct.minStock,
-
-  unit:
-    data.unit !== undefined
-      ? data.unit
-      : existingProduct.unit,
-
-  status:
-    data.status !== undefined
-      ? data.status
-      : existingProduct.status,
-
-  supplierId,
-};
-
-  // ==============================
-  // VALIDASI ANGKA
-  // ==============================
-
- if (
-  Number.isNaN(updateData.minStock) ||
-  updateData.minStock < 0
-) {
-  throw new Error(
-    "Minimum stok tidak valid"
-  );
+    return tx.product.update({
+      where: {
+        id,
+      },
+      data: updateData,
+      include: {
+        supplier: true,
+      },
+    });
+  });
 }
 
-if (
-  updateData.status !== "ACTIVE" &&
-  updateData.status !== "INACTIVE"
-) {
-  throw new Error(
-    "Status produk tidak valid"
-  );
-}
-
-return prisma.product.update({
-  where: {
-    id,
-  },
-
-  data: updateData,
-
-  include: {
-    supplier: true,
-  },
-});
-
-  // ==============================
-  // UPDATE PRODUCT
-  // ==============================
-
-  return prisma.product.update({
+export async function deleteProductService(id) {
+  const existingProduct = await prisma.product.findUnique({
     where: {
       id,
     },
-
-    data: updateData,
-
-    include: {
-      supplier: true,
-    },
   });
-}
-
-// ==========================================
-// SOFT DELETE
-// ACTIVE → INACTIVE
-// ==========================================
-
-export async function deleteProductService(id) {
-  const existingProduct =
-    await prisma.product.findUnique({
-      where: {
-        id,
-      },
-    });
 
   if (!existingProduct) {
     return null;
   }
 
-  if (
-    existingProduct.status === "INACTIVE"
-  ) {
+  if (existingProduct.status === "INACTIVE") {
     return existingProduct;
   }
 
@@ -358,37 +274,27 @@ export async function deleteProductService(id) {
     where: {
       id,
     },
-
     data: {
       status: "INACTIVE",
     },
-
     include: {
       supplier: true,
     },
   });
 }
 
-// ==========================================
-// RESTORE
-// INACTIVE → ACTIVE
-// ==========================================
-
 export async function restoreProductService(id) {
-  const existingProduct =
-    await prisma.product.findUnique({
-      where: {
-        id,
-      },
-    });
+  const existingProduct = await prisma.product.findUnique({
+    where: {
+      id,
+    },
+  });
 
   if (!existingProduct) {
     return null;
   }
 
-  if (
-    existingProduct.status === "ACTIVE"
-  ) {
+  if (existingProduct.status === "ACTIVE") {
     return existingProduct;
   }
 
@@ -396,58 +302,40 @@ export async function restoreProductService(id) {
     where: {
       id,
     },
-
     data: {
       status: "ACTIVE",
     },
-
     include: {
       supplier: true,
     },
   });
 }
-
-// ==========================================
-// GET INACTIVE PRODUCTS
-// ==========================================
 
 export async function getInactiveProductsService() {
   return prisma.product.findMany({
     where: {
       status: "INACTIVE",
     },
-
     orderBy: {
       updatedAt: "desc",
     },
-
     include: {
       supplier: true,
     },
   });
 }
 
-// ==========================================
-// GET NEXT PRODUCT CODE
-// ==========================================
-
 export async function getNextProductCodeService() {
-  const lastProduct =
-    await prisma.product.findFirst({
-      orderBy: {
-        id: "desc",
-      },
+  const lastProduct = await prisma.product.findFirst({
+    orderBy: {
+      id: "desc",
+    },
+    select: {
+      id: true,
+    },
+  });
 
-      select: {
-        id: true,
-      },
-    });
+  const nextId = (lastProduct?.id || 0) + 1;
 
-  const nextId =
-    (lastProduct?.id || 0) + 1;
-
-  return `PRD-${String(
-    nextId
-  ).padStart(6, "0")}`;
+  return `PRD-${String(nextId).padStart(6, "0")}`;
 }
-

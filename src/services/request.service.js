@@ -310,14 +310,17 @@ include: {
 items: {
 include: {
 product: {
-select: {
-id: true,
-code: true,
-name: true,
-stock: true,
-unit: true,
-status: true,
-},
+  select: {
+    id: true,
+    code: true,
+    name: true,
+    price: true,
+    category: true,
+    image: true,
+    stock: true,
+    unit: true,
+    status: true,
+  },
 },
 },
 },
@@ -401,16 +404,19 @@ return tx.request.update({
     supplier: true,
     items: {
       include: {
-        product: {
-          select: {
-            id: true,
-            code: true,
-            name: true,
-            stock: true,
-            unit: true,
-            status: true,
-          },
-        },
+       product: {
+  select: {
+    id: true,
+    code: true,
+    name: true,
+    price: true,
+    category: true,
+    image: true,
+    stock: true,
+    unit: true,
+    status: true,
+  },
+},
       },
     },
   },
@@ -418,78 +424,88 @@ return tx.request.update({
 
 });
 
-const secret = process.env.INVENTORY_TRANSFER_SECRET;
-const posApiUrl = process.env.POS_API_URL;
 
-if (!secret || !posApiUrl) {
-console.error("Konfigurasi transfer POS belum lengkap");
+  const secret = process.env.INVENTORY_TRANSFER_SECRET;
+  const posApiUrl = process.env.POS_API_URL;
 
-return {
-  ...approvedRequest,
-  transfer: {
-    sent: false,
-    message: "Request disetujui, tetapi konfigurasi transfer POS belum lengkap",
-  },
-};
+  if (!secret || !posApiUrl) {
+    console.error("Konfigurasi transfer POS belum lengkap");
 
+    return {
+      ...approvedRequest,
+      transfer: {
+        sent: false,
+        message:
+          "Request disetujui, tetapi konfigurasi transfer POS belum lengkap",
+      },
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${posApiUrl.replace(/\/+$/, "")}/api/v1/inventory/stock-recive`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-inventory-transfer-secret": secret,
+        },
+        body: JSON.stringify({
+          requestId: approvedRequest.requestNumber,
+          items: approvedRequest.items.map((item) => ({
+            productCode: item.product.code,
+            name: item.product.name,
+            price: Number(item.product.price),
+            category: item.product.category || null,
+            image: item.product.image || null,
+            quantity: Number(item.quantity),
+          })),
+        }),
+        signal: AbortSignal.timeout(15000),
+      }
+    );
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || !result?.success) {
+      console.error("Transfer ke POS gagal:", {
+        status: response.status,
+        result,
+      });
+
+      return {
+        ...approvedRequest,
+        transfer: {
+          sent: false,
+          message:
+            result?.message ||
+            `POS merespons dengan status HTTP ${response.status}`,
+        },
+      };
+    }
+
+    return {
+      ...approvedRequest,
+      transfer: {
+        sent: true,
+        message: result.message || "Transfer berhasil dikirim ke POS",
+        data: result.data,
+      },
+    };
+  } catch (error) {
+    console.error("Pengiriman transfer ke POS gagal:", error);
+
+    return {
+      ...approvedRequest,
+      transfer: {
+        sent: false,
+        message:
+          "Request sudah disetujui, tetapi POS tidak dapat dijangkau. Transfer perlu dicoba kembali.",
+      },
+    };
+  }
 }
 
-try {
-const response = await fetch(
-`${posApiUrl.replace(/\/$/, "")}/api/v1/inventory/stock-recive`,
-{
-method: "POST",
-headers: {
-"Content-Type": "application/json",
-"x-inventory-transfer-secret": secret,
-},
-body: JSON.stringify({
-requestId: approvedRequest.requestNumber,
-items: approvedRequest.items.map((item) => ({
-productCode: item.product.code,
-quantity: item.quantity,
-})),
-}),
-signal: AbortSignal.timeout(10000),
-}
-);
-
-const result = await response.json().catch(() => null);
-
-if (!response.ok || !result?.success) {
-  console.error("Transfer ke POS gagal:", result);
-
-  return {
-    ...approvedRequest,
-    transfer: {
-      sent: false,
-      message: result?.message || `POS merespons dengan status HTTP ${response.status}`,
-    },
-  };
-}
-
-return {
-  ...approvedRequest,
-  transfer: {
-    sent: true,
-    message: result.message || "Transfer berhasil dikirim ke POS",
-    data: result.data,
-  },
-};
-
-} catch (error) {
-console.error("Pengiriman transfer ke POS gagal:", error);
-
-return {
-  ...approvedRequest,
-  transfer: {
-    sent: false,
-    message: "Request sudah disetujui, tetapi POS tidak dapat dijangkau. Transfer perlu dicoba kembali.",
-  },
-};
-
-}
-}
 
 
 export async function rejectRequestService(

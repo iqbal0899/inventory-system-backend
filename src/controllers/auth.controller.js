@@ -1,3 +1,4 @@
+
 import { loginUser } from "../services/auth.service.js";
 import {
   successResponse,
@@ -18,39 +19,35 @@ export async function login(req, res) {
 
     const result = await loginUser(username, password);
 
-    // ==========================================
-    // LOGIN LOG
-    // ==========================================
-
-    const loginTime = new Date();
+    if (!result?.token || !result?.user) {
+      return errorResponse(
+        res,
+        "Data login tidak lengkap",
+        500
+      );
+    }
 
     console.log("========================================");
     console.log("LOGIN BERHASIL");
-    console.log("========================================");
-    console.log("User ID   :", result.user.id);
-    console.log("Username  :", result.user.username);
-    console.log("Role      :", result.user.role);
+    console.log("User ID  :", result.user.id);
+    console.log("Username :", result.user.username);
+    console.log("Role     :", result.user.role);
     console.log(
-      "Waktu     :",
-      loginTime.toLocaleString("id-ID", {
+      "Waktu    :",
+      new Date().toLocaleString("id-ID", {
         dateStyle: "full",
         timeStyle: "medium",
       })
     );
-    console.log("JWT Token :", result.token);
     console.log("========================================");
 
-    // ==========================================
-    // COOKIE JWT
-    // ==========================================
-
-   res.cookie("inventory_token", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  maxAge: 24 * 60 * 60 * 1000,
-  path: "/",
-});
+    res.cookie("inventory_token", result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+      path: "/",
+    });
 
     return successResponse(
       res,
@@ -61,12 +58,12 @@ export async function login(req, res) {
       200
     );
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Login error:", error.message);
 
     return errorResponse(
       res,
-      error.message || "Login gagal",
-      401
+      "Login gagal",
+      500
     );
   }
 }
@@ -88,16 +85,16 @@ export async function getMe(req, res) {
 export function logout(req, res) {
   console.log("========================================");
   console.log("LOGOUT");
-  console.log("========================================");
   console.log("User ID  :", req.user?.userId || "-");
   console.log("Username :", req.user?.username || "-");
   console.log("Waktu    :", new Date().toLocaleString("id-ID"));
   console.log("========================================");
 
-  res.clearCookie("token", {
+  res.clearCookie("inventory_token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
+    path: "/",
   });
 
   return res.status(200).json({
@@ -105,4 +102,3 @@ export function logout(req, res) {
     message: "Logout berhasil",
   });
 }
-
