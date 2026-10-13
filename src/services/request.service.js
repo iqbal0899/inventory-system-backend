@@ -1,26 +1,24 @@
 import { prisma } from "../config/database.js";
+import {
+  sendRequestStatusNotification,
+} from "./pos-notification.service.js";
 
 export async function getRequestsService(params = {}) {
-  const page = Math.max(
-    Number(params.page) || 1,
-    1
-  );
-
+  const page = Math.max(Number(params.page) || 1, 1);
   const limit = Math.min(
     Math.max(Number(params.limit) || 10, 1),
     100
   );
 
   const skip = (page - 1) * limit;
-
   const where = {};
 
   if (params.status) {
     where.status = params.status.toUpperCase();
   }
 
-  const [requests, total] =
-    await prisma.$transaction([
+  try {
+    const [requests, total] = await prisma.$transaction([
       prisma.request.findMany({
         where,
         skip,
@@ -60,21 +58,22 @@ export async function getRequestsService(params = {}) {
           },
         },
       }),
-
-      prisma.request.count({
-        where,
-      }),
+      prisma.request.count({ where }),
     ]);
 
-  return {
-    requests,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+    return {
+      requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    console.error("GET REQUESTS SERVICE ERROR:", error);
+    throw error;
+  }
 }
 
 export async function getRequestByIdService(id) {
@@ -297,133 +296,182 @@ export async function createRequestService({
 
   return request;
 }
+async function notifyApprovedRequest(requestNumber) {
+  try {
+    await sendRequestStatusNotification({
+      requestNumber,
+      status: "APPROVED",
+    });
+
+    return {
+      sent: true,
+      message: "Notifikasi persetujuan berhasil dikirim",
+    };
+  } catch (error) {
+    console.error("NOTIFICATION APPROVE ERROR:", error);
+
+    return {
+      sent: false,
+      message:
+        "Request disetujui, tetapi notifikasi POS belum terkirim",
+    };
+  }
+}
 
 export async function approveRequestService(id, approvedById) {
-if (!approvedById) {
-throw new Error("User yang menyetujui request tidak ditemukan");
-}
-
-const approvedRequest = await prisma.$transaction(async (tx) => {
-const request = await tx.request.findUnique({
-where: { id },
-include: {
-items: {
-include: {
-product: {
-  select: {
-    id: true,
-    code: true,
-    name: true,
-    price: true,
-    category: true,
-    image: true,
-    stock: true,
-    unit: true,
-    status: true,
-  },
-},
-},
-},
-},
-});
-
-if (!request) {
-  throw new Error("Request tidak ditemukan");
-}
-
-if (request.status !== "PENDING") {
-  throw new Error(
-    "Request hanya dapat disetujui ketika status masih pending"
-  );
-}
-
-if (!request.items?.length) {
-  throw new Error("Request tidak memiliki produk");
-}
-
-for (const item of request.items) {
-  if (!item.product || item.product.status !== "ACTIVE") {
-    throw new Error(`Produk ${item.product?.name || item.productId} tidak aktif atau tidak ditemukan`);
-  }
-
-  if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
-    throw new Error(`Jumlah produk ${item.product.name} tidak valid`);
-  }
-
-  if (item.product.stock < item.quantity) {
+  if (!approvedById) {
     throw new Error(
-      `Stok ${item.product.name} tidak mencukupi. Stok tersedia ${item.product.stock} ${item.product.unit}, request ${item.quantity} ${item.product.unit}`
+      "User yang menyetujui request tidak ditemukan"
     );
   }
-}
 
-for (const item of request.items) {
-  const updated = await tx.product.updateMany({
-    where: {
-      id: item.productId,
-      status: "ACTIVE",
-      stock: { gte: item.quantity },
-    },
-    data: {
-      stock: { decrement: item.quantity },
-    },
-  });
-
-  if (updated.count !== 1) {
-    throw new Error(`Stok ${item.product.name} tidak mencukupi`);
-  }
-
-  await tx.stockMovement.create({
-    data: {
-      type: "OUT",
-      quantity: -item.quantity,
-      stockBefore: item.product.stock,
-      stockAfter: item.product.stock - item.quantity,
-      note: "Request disetujui",
-      productId: item.productId,
-      userId: Number(approvedById),
-      requestId: request.id,
-    },
-  });
-}
-
-return tx.request.update({
-  where: { id },
-  data: {
-    status: "APPROVED",
-    approvedById: Number(approvedById),
-    approvedAt: new Date(),
-  },
-  include: {
-    createdBy: {
-      select: { id: true, username: true, role: true },
-    },
-    approvedBy: {
-      select: { id: true, username: true, role: true },
-    },
-    supplier: true,
-    items: {
+  const approvedRequest = await prisma.$transaction(async (tx) => {
+    const request = await tx.request.findUnique({
+      where: { id },
       include: {
-       product: {
-  select: {
-    id: true,
-    code: true,
-    name: true,
-    price: true,
-    category: true,
-    image: true,
-    stock: true,
-    unit: true,
-    status: true,
-  },
-},
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                price: true,
+                category: true,
+                image: true,
+                stock: true,
+                unit: true,
+                status: true,
+              },
+            },
+          },
+        },
       },
-    },
-  },
-});
+    });
 
-});
+    if (!request) {
+      throw new Error("Request tidak ditemukan");
+    }
 
+    if (request.status !== "PENDING") {
+      throw new Error(
+        "Request hanya dapat disetujui ketika status masih pending"
+      );
+    }
+
+    if (!request.items?.length) {
+      throw new Error("Request tidak memiliki produk");
+    }
+
+    for (const item of request.items) {
+      if (
+        !item.product ||
+        item.product.status !== "ACTIVE"
+      ) {
+        throw new Error(
+          `Produk ${item.product?.name || item.productId} tidak aktif atau tidak ditemukan`
+        );
+      }
+
+      if (
+        !Number.isInteger(item.quantity) ||
+        item.quantity <= 0
+      ) {
+        throw new Error(
+          `Jumlah produk ${item.product.name} tidak valid`
+        );
+      }
+
+      if (item.product.stock < item.quantity) {
+        throw new Error(
+          `Stok ${item.product.name} tidak mencukupi. Stok tersedia ${item.product.stock} ${item.product.unit}, request ${item.quantity} ${item.product.unit}`
+        );
+      }
+    }
+
+    for (const item of request.items) {
+      const updated = await tx.product.updateMany({
+        where: {
+          id: item.productId,
+          status: "ACTIVE",
+          stock: {
+            gte: item.quantity,
+          },
+        },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+
+      if (updated.count !== 1) {
+        throw new Error(
+          `Stok ${item.product.name} tidak mencukupi`
+        );
+      }
+
+      await tx.stockMovement.create({
+        data: {
+          type: "OUT",
+          quantity: -item.quantity,
+          stockBefore: item.product.stock,
+          stockAfter: item.product.stock - item.quantity,
+          note: "Request disetujui",
+          productId: item.productId,
+          userId: Number(approvedById),
+          requestId: request.id,
+        },
+      });
+    }
+
+    return tx.request.update({
+      where: { id },
+      data: {
+        status: "APPROVED",
+        approvedById: Number(approvedById),
+        approvedAt: new Date(),
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
+          },
+        },
+        approvedBy: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
+          },
+        },
+        supplier: true,
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                price: true,
+                category: true,
+                image: true,
+                stock: true,
+                unit: true,
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  });
+
+  const notification = await notifyApprovedRequest(
+    approvedRequest.requestNumber
+  );
 
   const secret = process.env.INVENTORY_TRANSFER_SECRET;
   const posApiUrl = process.env.POS_API_URL;
@@ -438,6 +486,7 @@ return tx.request.update({
         message:
           "Request disetujui, tetapi konfigurasi transfer POS belum lengkap",
       },
+      notification,
     };
   }
 
@@ -481,6 +530,7 @@ return tx.request.update({
             result?.message ||
             `POS merespons dengan status HTTP ${response.status}`,
         },
+        notification,
       };
     }
 
@@ -488,9 +538,12 @@ return tx.request.update({
       ...approvedRequest,
       transfer: {
         sent: true,
-        message: result.message || "Transfer berhasil dikirim ke POS",
+        message:
+          result.message ||
+          "Transfer berhasil dikirim ke POS",
         data: result.data,
       },
+      notification,
     };
   } catch (error) {
     console.error("Pengiriman transfer ke POS gagal:", error);
@@ -502,9 +555,11 @@ return tx.request.update({
         message:
           "Request sudah disetujui, tetapi POS tidak dapat dijangkau. Transfer perlu dicoba kembali.",
       },
+      notification,
     };
   }
 }
+
 
 
 
@@ -513,42 +568,49 @@ export async function rejectRequestService(
   reason,
   rejectedById
 ) {
-  const request =
-    await prisma.request.findUnique({
-      where: {
-        id,
-      },
-    });
-
-  if (!request) {
-    throw new Error(
-      "Request tidak ditemukan"
-    );
+  if (!rejectedById) {
+    throw new Error("User yang menolak request tidak ditemukan");
   }
 
-  if (
-    request.status !== "PENDING"
-  ) {
+  const request = await prisma.request.findUnique({
+    where: { id },
+  });
+
+  if (!request) {
+    throw new Error("Request tidak ditemukan");
+  }
+
+  if (request.status !== "PENDING") {
     throw new Error(
       "Request hanya dapat ditolak ketika status masih pending"
     );
   }
 
-  const note =
-    reason?.trim()
-      ? `Request ditolak: ${reason.trim()}`
-      : "Request ditolak";
+  const rejectionReason = reason?.trim();
 
-  return prisma.request.update({
+  if (!rejectionReason) {
+    throw new Error("Alasan penolakan wajib diisi");
+  }
+
+  const rejectedRequest = await prisma.request.updateMany({
     where: {
       id,
+      status: "PENDING",
     },
-
     data: {
       status: "REJECTED",
-      note,
+      note: `Request ditolak: ${rejectionReason}`,
     },
+  });
 
+  if (rejectedRequest.count !== 1) {
+    throw new Error(
+      "Request sudah diproses oleh pengguna lain"
+    );
+  }
+
+  const result = await prisma.request.findUnique({
+    where: { id },
     include: {
       createdBy: {
         select: {
@@ -557,15 +619,6 @@ export async function rejectRequestService(
           role: true,
         },
       },
-
-      approvedBy: {
-        select: {
-          id: true,
-          username: true,
-          role: true,
-        },
-      },
-
       items: {
         include: {
           product: {
@@ -581,7 +634,32 @@ export async function rejectRequestService(
       },
     },
   });
+
+  let notificationSent = false;
+
+  try {
+    await sendRequestStatusNotification({
+      requestNumber: result.requestNumber,
+      status: "REJECTED",
+      reason: rejectionReason,
+    });
+
+    notificationSent = true;
+  } catch (error) {
+    console.error("NOTIFICATION REJECT ERROR:", error);
+  }
+
+  return {
+    ...result,
+    notification: {
+      sent: notificationSent,
+      message: notificationSent
+        ? "Notifikasi penolakan berhasil dikirim"
+        : "Request ditolak, tetapi notifikasi POS belum terkirim",
+    },
+  };
 }
+
 
 export async function deleteRequestService(
   id

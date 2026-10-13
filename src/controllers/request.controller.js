@@ -7,6 +7,21 @@ import {
   deleteRequestService,
 } from "../services/request.service.js";
 
+function getValidRequestId(req, res) {
+  const id = req.params.id?.trim();
+
+  if (!id) {
+    res.status(400).json({
+      success: false,
+      message: "ID request tidak valid",
+    });
+
+    return null;
+  }
+
+  return id;
+}
+
 export async function getRequests(req, res) {
   try {
     const result = await getRequestsService(req.query);
@@ -17,7 +32,7 @@ export async function getRequests(req, res) {
       data: result,
     });
   } catch (error) {
-    console.error(error);
+    console.error("GET REQUESTS ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -28,14 +43,9 @@ export async function getRequests(req, res) {
 
 export async function getRequestById(req, res) {
   try {
-    const id = Number(req.params.id);
+    const id = getValidRequestId(req, res);
 
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "ID request tidak valid",
-      });
-    }
+    if (!id) return;
 
     const result = await getRequestByIdService(id);
 
@@ -45,7 +55,7 @@ export async function getRequestById(req, res) {
       data: result,
     });
   } catch (error) {
-    console.error(error);
+    console.error("GET REQUEST DETAIL ERROR:", error);
 
     return res.status(404).json({
       success: false,
@@ -106,7 +116,7 @@ export async function createRequest(req, res) {
       data: result,
     });
   } catch (error) {
-    console.error(error);
+    console.error("CREATE REQUEST ERROR:", error);
 
     return res.status(400).json({
       success: false,
@@ -117,15 +127,11 @@ export async function createRequest(req, res) {
 
 export async function approveRequest(req, res) {
   try {
-    const id = req.params.id;
-    const approvedById = req.user.userId;
+    const id = getValidRequestId(req, res);
 
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "Request ID wajib diisi",
-      });
-    }
+    if (!id) return;
+
+    const approvedById = req.user?.userId;
 
     if (!approvedById) {
       return res.status(401).json({
@@ -134,18 +140,9 @@ export async function approveRequest(req, res) {
       });
     }
 
-    console.log("APPROVE REQUEST");
-    console.log("REQUEST ID:", id);
-    console.log("APPROVER ID:", approvedById);
-
     const result = await approveRequestService(
       id,
       approvedById
-    );
-
-    console.log(
-      "APPROVE SUCCESS:",
-      result.id
     );
 
     return res.status(200).json({
@@ -154,37 +151,42 @@ export async function approveRequest(req, res) {
       data: result,
     });
   } catch (error) {
-    console.error(
-      "APPROVE ERROR:",
-      error
-    );
+    console.error("APPROVE REQUEST ERROR:", error);
 
     return res.status(400).json({
       success: false,
-      message:
-        error.message ||
-        "Gagal menyetujui request",
+      message: error.message || "Gagal menyetujui request",
     });
   }
 }
 
 export async function rejectRequest(req, res) {
   try {
-    const id = Number(req.params.id);
+    const id = getValidRequestId(req, res);
 
-    if (!id) {
-      return res.status(400).json({
+    if (!id) return;
+
+    const rejectedById = req.user?.userId;
+    const { reason } = req.body || {};
+
+    if (!rejectedById) {
+      return res.status(401).json({
         success: false,
-        message: "ID request tidak valid",
+        message: "User belum terautentikasi",
       });
     }
 
-    const { reason } = req.body;
+    if (!reason || !String(reason).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Alasan penolakan wajib diisi",
+      });
+    }
 
     const result = await rejectRequestService(
       id,
-      reason,
-      req.user?.id || null
+      String(reason).trim(),
+      rejectedById
     );
 
     return res.status(200).json({
@@ -193,7 +195,7 @@ export async function rejectRequest(req, res) {
       data: result,
     });
   } catch (error) {
-    console.error(error);
+    console.error("REJECT REQUEST ERROR:", error);
 
     return res.status(400).json({
       success: false,
@@ -204,14 +206,9 @@ export async function rejectRequest(req, res) {
 
 export async function deleteRequest(req, res) {
   try {
-    const id = Number(req.params.id);
+    const id = getValidRequestId(req, res);
 
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "ID request tidak valid",
-      });
-    }
+    if (!id) return;
 
     const result = await deleteRequestService(id);
 
@@ -221,7 +218,7 @@ export async function deleteRequest(req, res) {
       data: result,
     });
   } catch (error) {
-    console.error(error);
+    console.error("DELETE REQUEST ERROR:", error);
 
     return res.status(400).json({
       success: false,
