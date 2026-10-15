@@ -64,9 +64,14 @@ export async function getRequestById(req, res) {
   }
 }
 
+
 export async function createRequest(req, res) {
   try {
-    const { items, note } = req.body;
+    const { items, note, requesterUsername } = req.body;
+
+    console.log("Body:", req.body);
+
+    console.log("username requester:", requesterUsername);
 
     if (!req.user?.userId) {
       return res.status(401).json({
@@ -84,7 +89,7 @@ export async function createRequest(req, res) {
 
     for (const item of items) {
       if (
-        !Number.isInteger(Number(item.productId)) ||
+        !Number.isSafeInteger(Number(item.productId)) ||
         Number(item.productId) <= 0
       ) {
         return res.status(400).json({
@@ -94,7 +99,7 @@ export async function createRequest(req, res) {
       }
 
       if (
-        !Number.isInteger(Number(item.quantity)) ||
+        !Number.isSafeInteger(Number(item.quantity)) ||
         Number(item.quantity) <= 0
       ) {
         return res.status(400).json({
@@ -104,10 +109,27 @@ export async function createRequest(req, res) {
       }
     }
 
+    if (
+      requesterUsername !== undefined &&
+      (
+        typeof requesterUsername !== "string" ||
+        requesterUsername.trim().length === 0
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Username requester tidak valid",
+      });
+    }
+
     const result = await createRequestService({
       items,
       note,
       requesterId: req.user.userId,
+      requesterUsername:
+        typeof requesterUsername === "string"
+          ? requesterUsername.trim()
+          : null,
     });
 
     return res.status(201).json({
@@ -124,6 +146,7 @@ export async function createRequest(req, res) {
     });
   }
 }
+
 
 export async function approveRequest(req, res) {
   try {

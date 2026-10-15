@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Backend API for Inventory System",
   "type": "module",
-  "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
+ "scripts": {
+  "dev": "printf \"\\033]0;internal server\\007\" && nodemon src/server.js",
+  "start": "printf \"\\033]0;internal server\\007\" && node src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

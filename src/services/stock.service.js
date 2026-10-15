@@ -47,66 +47,58 @@ export async function getStockByProductIdService(productId) {
 
   return product;
 }
-
-export async function getStockMovementsService({
-  page = 1,
-  limit = 10,
-  productId,
-  type,
-} = {}) {
-  const currentPage = Math.max(
-    1,
-    Number(page) || 1
+export async function getStockMovementsService(params = {}) {
+  const page = Math.max(Number(params.page) || 1, 1);
+  const limit = Math.min(
+    Math.max(Number(params.limit) || 10, 1),
+    1000
   );
+  const skip = (page - 1) * limit;
 
-  const perPage = Math.min(
-    100,
-    Math.max(1, Number(limit) || 10)
-  );
+  const { startDate, endDate, productId, type } = params;
 
-  const where = {};
+  if ((startDate && !endDate) || (!startDate && endDate)) {
+    throw new Error("Tanggal mulai dan tanggal akhir wajib diisi");
+  }
 
-  if (productId) {
-    const parsedProductId = Number(productId);
+  let dateFilter;
+
+  if (startDate && endDate) {
+    const start = new Date(`${startDate}T00:00:00.000`);
+    const end = new Date(`${endDate}T23:59:59.999`);
 
     if (
-      Number.isInteger(parsedProductId) &&
-      parsedProductId > 0
+      Number.isNaN(start.getTime()) ||
+      Number.isNaN(end.getTime())
     ) {
-      where.productId = parsedProductId;
+      throw new Error("Format tanggal tidak valid");
     }
+
+    if (start > end) {
+      throw new Error(
+        "Tanggal mulai tidak boleh melebihi tanggal akhir"
+      );
+    }
+
+    dateFilter = {
+      gte: start,
+      lte: end,
+    };
   }
 
-  if (type) {
-    const validTypes = [
-      "INITIAL",
-      "IN",
-      "OUT",
-      "ADJUSTMENT",
-    ];
-
-    if (validTypes.includes(type)) {
-      where.type = type;
-    }
-  }
-
-  const skip = (currentPage - 1) * perPage;
+  const where = {
+    ...(type ? { type } : {}),
+    ...(productId ? { productId: Number(productId) } : {}),
+    ...(dateFilter ? { createdAt: dateFilter } : {}),
+  };
 
   const [movements, total] = await Promise.all([
     prisma.stockMovement.findMany({
       where,
-      skip,
-      take: perPage,
-      orderBy: {
-        createdAt: "desc",
-      },
       include: {
         product: {
-          select: {
-            id: true,
-            code: true,
-            name: true,
-            unit: true,
+          include: {
+            supplier: true,
           },
         },
         user: {
@@ -120,29 +112,92 @@ export async function getStockMovementsService({
           select: {
             id: true,
             requestNumber: true,
+            createdBy: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
           },
         },
       },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
     }),
-
-    prisma.stockMovement.count({
-      where,
-    }),
+    prisma.stockMovement.count({ where }),
   ]);
 
+  let stockAddedMap = new Map();
+
+  if (dateFilter) {
+    const incomingMovements = await prisma.stockMovement.groupBy({
+      by: ["productId"],
+      where: {
+        type: "IN",
+        createdAt: dateFilter,
+      },
+      _sum: {
+        quantity: true,
+      },
+    });
+
+    stockAddedMap = new Map(
+      incomingMovements.map((movement) => [
+        movement.productId,
+        movement._sum.quantity ?? 0,
+      ])
+    );
+  }
+
+  const data = movements.map((movement) => {
+    const request = movement.request;
+
+    return {
+      id: movement.id,
+      productId: movement.productId,
+      code: movement.product?.code ?? "-",
+      name: movement.product?.name ?? "-",
+      product: movement.product?.name ?? "-",
+      supplier: movement.product?.supplier?.name ?? "-",
+      price: Number(movement.product?.price ?? 0),
+      type: movement.type,
+      quantity: movement.quantity,
+      stockBefore: movement.stockBefore,
+      stockAdded:
+        movement.type === "OUT"
+          ? stockAddedMap.get(movement.productId) ?? 0
+          : movement.type === "IN"
+            ? movement.quantity
+            : 0,
+      stockReduced:
+        movement.type === "OUT"
+          ? Math.abs(movement.quantity)
+          : 0,
+      stockAfter: movement.stockAfter,
+      currentStock: movement.product?.stock ?? 0,
+      date: movement.createdAt,
+      createdAt: movement.createdAt,
+      user: movement.user?.username ?? "-",
+      username: movement.user?.username ?? "-",
+      requestNumber: request?.requestNumber ?? "-",
+      note: movement.note ?? "-",
+    };
+  });
+
   return {
-    data: movements,
+    data,
     pagination: {
-      page: currentPage,
-      limit: perPage,
+      page,
+      limit,
       total,
-      totalPages: Math.max(
-        1,
-        Math.ceil(total / perPage)
-      ),
+      totalPages: Math.ceil(total / limit),
     },
   };
 }
+
 
 export async function stockInService({
   productId,
@@ -150,51 +205,50 @@ export async function stockInService({
   note,
   userId,
 }) {
-  const result = await prisma.$transaction(
-    async (tx) => {
-      const product = await tx.product.findUnique({
-        where: {
-          id: Number(productId),
-        },
-      });
+  return prisma.$transaction(async (tx) => {
+    const parsedProductId = Number(productId);
+    const parsedQuantity = Number(quantity);
 
-      if (!product) {
-        throw new Error(
-          "Produk tidak ditemukan"
-        );
-      }
-
-      const stockBefore = product.stock;
-      const stockAfter =
-        stockBefore + Number(quantity);
-
-      const updatedProduct =
-        await tx.product.update({
-          where: {
-            id: Number(productId),
-          },
-          data: {
-            stock: stockAfter,
-          },
-        });
-
-      await tx.stockMovement.create({
-        data: {
-          type: "IN",
-          quantity: Number(quantity),
-          stockBefore,
-          stockAfter,
-          note: note || null,
-          productId: Number(productId),
-          userId: Number(userId),
-        },
-      });
-
-      return updatedProduct;
+    if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+      throw new Error("Jumlah stok masuk harus bilangan bulat positif");
     }
-  );
 
-  return result;
+    const product = await tx.product.findUnique({
+      where: {
+        id: parsedProductId,
+      },
+    });
+
+    if (!product) {
+      throw new Error("Produk tidak ditemukan");
+    }
+
+    const stockBefore = product.stock;
+    const stockAfter = stockBefore + parsedQuantity;
+
+    const updatedProduct = await tx.product.update({
+      where: {
+        id: parsedProductId,
+      },
+      data: {
+        stock: stockAfter,
+      },
+    });
+
+    await tx.stockMovement.create({
+      data: {
+        type: "IN",
+        quantity: parsedQuantity,
+        stockBefore,
+        stockAfter,
+        note: note || null,
+        productId: parsedProductId,
+        userId: Number(userId),
+      },
+    });
+
+    return updatedProduct;
+  });
 }
 
 export async function stockOutService({
@@ -203,59 +257,54 @@ export async function stockOutService({
   note,
   userId,
 }) {
-  const result = await prisma.$transaction(
-    async (tx) => {
-      const product = await tx.product.findUnique({
-        where: {
-          id: Number(productId),
-        },
-      });
+  return prisma.$transaction(async (tx) => {
+    const parsedProductId = Number(productId);
+    const parsedQuantity = Number(quantity);
 
-      if (!product) {
-        throw new Error(
-          "Produk tidak ditemukan"
-        );
-      }
-
-      const parsedQuantity = Number(quantity);
-
-      if (parsedQuantity > product.stock) {
-        throw new Error(
-          "Stok tidak mencukupi"
-        );
-      }
-
-      const stockBefore = product.stock;
-      const stockAfter =
-        stockBefore - parsedQuantity;
-
-      const updatedProduct =
-        await tx.product.update({
-          where: {
-            id: Number(productId),
-          },
-          data: {
-            stock: stockAfter,
-          },
-        });
-
-      await tx.stockMovement.create({
-        data: {
-          type: "OUT",
-          quantity: parsedQuantity,
-          stockBefore,
-          stockAfter,
-          note: note || null,
-          productId: Number(productId),
-          userId: Number(userId),
-        },
-      });
-
-      return updatedProduct;
+    if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
+      throw new Error("Jumlah stok keluar harus bilangan bulat positif");
     }
-  );
 
-  return result;
+    const product = await tx.product.findUnique({
+      where: {
+        id: parsedProductId,
+      },
+    });
+
+    if (!product) {
+      throw new Error("Produk tidak ditemukan");
+    }
+
+    if (parsedQuantity > product.stock) {
+      throw new Error("Stok tidak mencukupi");
+    }
+
+    const stockBefore = product.stock;
+    const stockAfter = stockBefore - parsedQuantity;
+
+    const updatedProduct = await tx.product.update({
+      where: {
+        id: parsedProductId,
+      },
+      data: {
+        stock: stockAfter,
+      },
+    });
+
+    await tx.stockMovement.create({
+      data: {
+        type: "OUT",
+        quantity: parsedQuantity,
+        stockBefore,
+        stockAfter,
+        note: note || null,
+        productId: parsedProductId,
+        userId: Number(userId),
+      },
+    });
+
+    return updatedProduct;
+  });
 }
 
 export async function adjustStockService({
@@ -264,50 +313,48 @@ export async function adjustStockService({
   note,
   userId,
 }) {
-  const result = await prisma.$transaction(
-    async (tx) => {
-      const product = await tx.product.findUnique({
-        where: {
-          id: Number(productId),
-        },
-      });
+  return prisma.$transaction(async (tx) => {
+    const parsedProductId = Number(productId);
+    const stockAfter = Number(stock);
 
-      if (!product) {
-        throw new Error(
-          "Produk tidak ditemukan"
-        );
-      }
-
-      const stockBefore = product.stock;
-      const stockAfter = Number(stock);
-      const quantity =
-        stockAfter - stockBefore;
-
-      const updatedProduct =
-        await tx.product.update({
-          where: {
-            id: Number(productId),
-          },
-          data: {
-            stock: stockAfter,
-          },
-        });
-
-      await tx.stockMovement.create({
-        data: {
-          type: "ADJUSTMENT",
-          quantity,
-          stockBefore,
-          stockAfter,
-          note: note || null,
-          productId: Number(productId),
-          userId: Number(userId),
-        },
-      });
-
-      return updatedProduct;
+    if (!Number.isInteger(stockAfter) || stockAfter < 0) {
+      throw new Error("Stok harus berupa bilangan bulat dan tidak boleh negatif");
     }
-  );
 
-  return result;
+    const product = await tx.product.findUnique({
+      where: {
+        id: parsedProductId,
+      },
+    });
+
+    if (!product) {
+      throw new Error("Produk tidak ditemukan");
+    }
+
+    const stockBefore = product.stock;
+    const quantity = stockAfter - stockBefore;
+
+    const updatedProduct = await tx.product.update({
+      where: {
+        id: parsedProductId,
+      },
+      data: {
+        stock: stockAfter,
+      },
+    });
+
+    await tx.stockMovement.create({
+      data: {
+        type: "ADJUSTMENT",
+        quantity,
+        stockBefore,
+        stockAfter,
+        note: note || null,
+        productId: parsedProductId,
+        userId: Number(userId),
+      },
+    });
+
+    return updatedProduct;
+  });
 }

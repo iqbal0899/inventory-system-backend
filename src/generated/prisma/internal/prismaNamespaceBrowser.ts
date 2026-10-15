@@ -141,6 +141,7 @@ export type StockMovementScalarFieldEnum = (typeof StockMovementScalarFieldEnum)
 export const RequestScalarFieldEnum = {
   id: 'id',
   requestNumber: 'requestNumber',
+  requesterUsername: 'requesterUsername',
   status: 'status',
   note: 'note',
   createdById: 'createdById',

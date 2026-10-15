@@ -1,7 +1,9 @@
+
 export async function sendRequestStatusNotification({
   requestNumber,
   status,
   reason = null,
+  processedByUsername,
 }) {
   const secret = process.env.INVENTORY_TRANSFER_SECRET;
   const posApiUrl = process.env.POS_API_URL;
@@ -9,6 +11,12 @@ export async function sendRequestStatusNotification({
   if (!secret || !posApiUrl) {
     throw new Error(
       "Konfigurasi webhook notifikasi POS belum lengkap"
+    );
+  }
+
+  if (!processedByUsername?.trim()) {
+    throw new Error(
+      "Username user yang memproses request wajib diisi"
     );
   }
 
@@ -25,6 +33,7 @@ export async function sendRequestStatusNotification({
       requestNumber,
       status,
       reason,
+      processedByUsername: processedByUsername.trim(),
     }),
     signal: AbortSignal.timeout(10000),
   });
@@ -32,11 +41,12 @@ export async function sendRequestStatusNotification({
   const result = await response.json().catch(() => null);
 
   console.log("POS NOTIFICATION RESPONSE:", {
-  endpoint,
-  status: response.status,
-  success: result?.success,
-  message: result?.message,
-});
+    endpoint,
+    httpStatus: response.status,
+    success: result?.success,
+    message: result?.message,
+    processedByUsername,
+  });
 
   if (!response.ok || !result?.success) {
     throw new Error(

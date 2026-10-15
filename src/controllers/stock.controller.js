@@ -77,6 +77,8 @@ export async function getStockMovements(req, res) {
       limit = 10,
       productId,
       type,
+      startDate,
+      endDate,
     } = req.query;
 
     const result = await getStockMovementsService({
@@ -84,6 +86,8 @@ export async function getStockMovements(req, res) {
       limit,
       productId,
       type,
+      startDate,
+      endDate,
     });
 
     return res.status(200).json({
@@ -93,16 +97,11 @@ export async function getStockMovements(req, res) {
       pagination: result.pagination,
     });
   } catch (error) {
-    console.error(
-      "GET STOCK MOVEMENTS ERROR:",
-      error
-    );
+    console.error("GET STOCK MOVEMENTS ERROR:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Gagal mengambil riwayat pergerakan stok",
+      message: error.message || "Gagal mengambil riwayat pergerakan stok",
     });
   }
 }

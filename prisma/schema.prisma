@@ -124,28 +124,24 @@ model StockMovement {
 }
 
 model Request {
-  id            String        @id @default(cuid())
-  requestNumber String        @unique
-  status        RequestStatus @default(PENDING)
-  note          String?
+  id                String        @id @default(cuid())
+  requestNumber     String        @unique
+  requesterUsername String?
+  status            RequestStatus @default(PENDING)
+  note              String?
+  createdById       Int
+  createdBy         User          @relation("RequestCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedById      Int?
+  approvedBy        User?         @relation("RequestApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  supplierId        Int?
+  supplier          Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  approvedAt        DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  createdById Int
-  createdBy   User @relation("RequestCreator", fields: [createdById], references: [id], onDelete: Restrict)
-
-  approvedById Int?
-  approvedBy   User? @relation("RequestApprover", fields: [approvedById], references: [id], onDelete: SetNull)
-
-  supplierId Int?
-  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-
-  approvedAt  DateTime?
-  completedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  items          RequestItem[]
-  stockMovements StockMovement[]
+  items             RequestItem[]
+  stockMovements    StockMovement[]
 
   @@index([createdById])
   @@index([approvedById])

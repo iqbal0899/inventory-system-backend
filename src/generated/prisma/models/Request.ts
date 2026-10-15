@@ -41,6 +41,7 @@ export type RequestSumAggregateOutputType = {
 export type RequestMinAggregateOutputType = {
   id: string | null
   requestNumber: string | null
+  requesterUsername: string | null
   status: $Enums.RequestStatus | null
   note: string | null
   createdById: number | null
@@ -55,6 +56,7 @@ export type RequestMinAggregateOutputType = {
 export type RequestMaxAggregateOutputType = {
   id: string | null
   requestNumber: string | null
+  requesterUsername: string | null
   status: $Enums.RequestStatus | null
   note: string | null
   createdById: number | null
@@ -69,6 +71,7 @@ export type RequestMaxAggregateOutputType = {
 export type RequestCountAggregateOutputType = {
   id: number
   requestNumber: number
+  requesterUsername: number
   status: number
   note: number
   createdById: number
@@ -97,6 +100,7 @@ export type RequestSumAggregateInputType = {
 export type RequestMinAggregateInputType = {
   id?: true
   requestNumber?: true
+  requesterUsername?: true
   status?: true
   note?: true
   createdById?: true
@@ -111,6 +115,7 @@ export type RequestMinAggregateInputType = {
 export type RequestMaxAggregateInputType = {
   id?: true
   requestNumber?: true
+  requesterUsername?: true
   status?: true
   note?: true
   createdById?: true
@@ -125,6 +130,7 @@ export type RequestMaxAggregateInputType = {
 export type RequestCountAggregateInputType = {
   id?: true
   requestNumber?: true
+  requesterUsername?: true
   status?: true
   note?: true
   createdById?: true
@@ -226,6 +232,7 @@ export type RequestGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 export type RequestGroupByOutputType = {
   id: string
   requestNumber: string
+  requesterUsername: string | null
   status: $Enums.RequestStatus
   note: string | null
   createdById: number
@@ -263,6 +270,7 @@ export type RequestWhereInput = {
   NOT?: Prisma.RequestWhereInput | Prisma.RequestWhereInput[]
   id?: Prisma.StringFilter<"Request"> | string
   requestNumber?: Prisma.StringFilter<"Request"> | string
+  requesterUsername?: Prisma.StringNullableFilter<"Request"> | string | null
   status?: Prisma.EnumRequestStatusFilter<"Request"> | $Enums.RequestStatus
   note?: Prisma.StringNullableFilter<"Request"> | string | null
   createdById?: Prisma.IntFilter<"Request"> | number
@@ -282,6 +290,7 @@ export type RequestWhereInput = {
 export type RequestOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   requestNumber?: Prisma.SortOrder
+  requesterUsername?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -304,6 +313,7 @@ export type RequestWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.RequestWhereInput | Prisma.RequestWhereInput[]
   OR?: Prisma.RequestWhereInput[]
   NOT?: Prisma.RequestWhereInput | Prisma.RequestWhereInput[]
+  requesterUsername?: Prisma.StringNullableFilter<"Request"> | string | null
   status?: Prisma.EnumRequestStatusFilter<"Request"> | $Enums.RequestStatus
   note?: Prisma.StringNullableFilter<"Request"> | string | null
   createdById?: Prisma.IntFilter<"Request"> | number
@@ -323,6 +333,7 @@ export type RequestWhereUniqueInput = Prisma.AtLeast<{
 export type RequestOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   requestNumber?: Prisma.SortOrder
+  requesterUsername?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -345,6 +356,7 @@ export type RequestScalarWhereWithAggregatesInput = {
   NOT?: Prisma.RequestScalarWhereWithAggregatesInput | Prisma.RequestScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Request"> | string
   requestNumber?: Prisma.StringWithAggregatesFilter<"Request"> | string
+  requesterUsername?: Prisma.StringNullableWithAggregatesFilter<"Request"> | string | null
   status?: Prisma.EnumRequestStatusWithAggregatesFilter<"Request"> | $Enums.RequestStatus
   note?: Prisma.StringNullableWithAggregatesFilter<"Request"> | string | null
   createdById?: Prisma.IntWithAggregatesFilter<"Request"> | number
@@ -359,6 +371,7 @@ export type RequestScalarWhereWithAggregatesInput = {
 export type RequestCreateInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   approvedAt?: Date | string | null
@@ -375,6 +388,7 @@ export type RequestCreateInput = {
 export type RequestUncheckedCreateInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   createdById: number
@@ -391,6 +405,7 @@ export type RequestUncheckedCreateInput = {
 export type RequestUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -407,6 +422,7 @@ export type RequestUpdateInput = {
 export type RequestUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdById?: Prisma.IntFieldUpdateOperationsInput | number
@@ -423,6 +439,7 @@ export type RequestUncheckedUpdateInput = {
 export type RequestCreateManyInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   createdById: number
@@ -437,6 +454,7 @@ export type RequestCreateManyInput = {
 export type RequestUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -448,6 +466,7 @@ export type RequestUpdateManyMutationInput = {
 export type RequestUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdById?: Prisma.IntFieldUpdateOperationsInput | number
@@ -477,6 +496,7 @@ export type RequestNullableScalarRelationFilter = {
 export type RequestCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   requestNumber?: Prisma.SortOrder
+  requesterUsername?: Prisma.SortOrder
   status?: Prisma.SortOrder
   note?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -497,6 +517,7 @@ export type RequestAvgOrderByAggregateInput = {
 export type RequestMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   requestNumber?: Prisma.SortOrder
+  requesterUsername?: Prisma.SortOrder
   status?: Prisma.SortOrder
   note?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -511,6 +532,7 @@ export type RequestMaxOrderByAggregateInput = {
 export type RequestMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   requestNumber?: Prisma.SortOrder
+  requesterUsername?: Prisma.SortOrder
   status?: Prisma.SortOrder
   note?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -700,6 +722,7 @@ export type RequestUpdateOneRequiredWithoutItemsNestedInput = {
 export type RequestCreateWithoutCreatedByInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   approvedAt?: Date | string | null
@@ -715,6 +738,7 @@ export type RequestCreateWithoutCreatedByInput = {
 export type RequestUncheckedCreateWithoutCreatedByInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   approvedById?: number | null
@@ -740,6 +764,7 @@ export type RequestCreateManyCreatedByInputEnvelope = {
 export type RequestCreateWithoutApprovedByInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   approvedAt?: Date | string | null
@@ -755,6 +780,7 @@ export type RequestCreateWithoutApprovedByInput = {
 export type RequestUncheckedCreateWithoutApprovedByInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   createdById: number
@@ -799,6 +825,7 @@ export type RequestScalarWhereInput = {
   NOT?: Prisma.RequestScalarWhereInput | Prisma.RequestScalarWhereInput[]
   id?: Prisma.StringFilter<"Request"> | string
   requestNumber?: Prisma.StringFilter<"Request"> | string
+  requesterUsername?: Prisma.StringNullableFilter<"Request"> | string | null
   status?: Prisma.EnumRequestStatusFilter<"Request"> | $Enums.RequestStatus
   note?: Prisma.StringNullableFilter<"Request"> | string | null
   createdById?: Prisma.IntFilter<"Request"> | number
@@ -829,6 +856,7 @@ export type RequestUpdateManyWithWhereWithoutApprovedByInput = {
 export type RequestCreateWithoutSupplierInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   approvedAt?: Date | string | null
@@ -844,6 +872,7 @@ export type RequestCreateWithoutSupplierInput = {
 export type RequestUncheckedCreateWithoutSupplierInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   createdById: number
@@ -885,6 +914,7 @@ export type RequestUpdateManyWithWhereWithoutSupplierInput = {
 export type RequestCreateWithoutStockMovementsInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   approvedAt?: Date | string | null
@@ -900,6 +930,7 @@ export type RequestCreateWithoutStockMovementsInput = {
 export type RequestUncheckedCreateWithoutStockMovementsInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   createdById: number
@@ -931,6 +962,7 @@ export type RequestUpdateToOneWithWhereWithoutStockMovementsInput = {
 export type RequestUpdateWithoutStockMovementsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -946,6 +978,7 @@ export type RequestUpdateWithoutStockMovementsInput = {
 export type RequestUncheckedUpdateWithoutStockMovementsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdById?: Prisma.IntFieldUpdateOperationsInput | number
@@ -961,6 +994,7 @@ export type RequestUncheckedUpdateWithoutStockMovementsInput = {
 export type RequestCreateWithoutItemsInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   approvedAt?: Date | string | null
@@ -976,6 +1010,7 @@ export type RequestCreateWithoutItemsInput = {
 export type RequestUncheckedCreateWithoutItemsInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   createdById: number
@@ -1007,6 +1042,7 @@ export type RequestUpdateToOneWithWhereWithoutItemsInput = {
 export type RequestUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1022,6 +1058,7 @@ export type RequestUpdateWithoutItemsInput = {
 export type RequestUncheckedUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdById?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1037,6 +1074,7 @@ export type RequestUncheckedUpdateWithoutItemsInput = {
 export type RequestCreateManyCreatedByInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   approvedById?: number | null
@@ -1050,6 +1088,7 @@ export type RequestCreateManyCreatedByInput = {
 export type RequestCreateManyApprovedByInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   createdById: number
@@ -1063,6 +1102,7 @@ export type RequestCreateManyApprovedByInput = {
 export type RequestUpdateWithoutCreatedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1078,6 +1118,7 @@ export type RequestUpdateWithoutCreatedByInput = {
 export type RequestUncheckedUpdateWithoutCreatedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedById?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1093,6 +1134,7 @@ export type RequestUncheckedUpdateWithoutCreatedByInput = {
 export type RequestUncheckedUpdateManyWithoutCreatedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedById?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1106,6 +1148,7 @@ export type RequestUncheckedUpdateManyWithoutCreatedByInput = {
 export type RequestUpdateWithoutApprovedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1121,6 +1164,7 @@ export type RequestUpdateWithoutApprovedByInput = {
 export type RequestUncheckedUpdateWithoutApprovedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdById?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1136,6 +1180,7 @@ export type RequestUncheckedUpdateWithoutApprovedByInput = {
 export type RequestUncheckedUpdateManyWithoutApprovedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdById?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1149,6 +1194,7 @@ export type RequestUncheckedUpdateManyWithoutApprovedByInput = {
 export type RequestCreateManySupplierInput = {
   id?: string
   requestNumber: string
+  requesterUsername?: string | null
   status?: $Enums.RequestStatus
   note?: string | null
   createdById: number
@@ -1162,6 +1208,7 @@ export type RequestCreateManySupplierInput = {
 export type RequestUpdateWithoutSupplierInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1177,6 +1224,7 @@ export type RequestUpdateWithoutSupplierInput = {
 export type RequestUncheckedUpdateWithoutSupplierInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdById?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1192,6 +1240,7 @@ export type RequestUncheckedUpdateWithoutSupplierInput = {
 export type RequestUncheckedUpdateManyWithoutSupplierInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   requestNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterUsername?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumRequestStatusFieldUpdateOperationsInput | $Enums.RequestStatus
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdById?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1245,6 +1294,7 @@ export type RequestCountOutputTypeCountStockMovementsArgs<ExtArgs extends runtim
 export type RequestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   requestNumber?: boolean
+  requesterUsername?: boolean
   status?: boolean
   note?: boolean
   createdById?: boolean
@@ -1265,6 +1315,7 @@ export type RequestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type RequestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   requestNumber?: boolean
+  requesterUsername?: boolean
   status?: boolean
   note?: boolean
   createdById?: boolean
@@ -1282,6 +1333,7 @@ export type RequestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type RequestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   requestNumber?: boolean
+  requesterUsername?: boolean
   status?: boolean
   note?: boolean
   createdById?: boolean
@@ -1299,6 +1351,7 @@ export type RequestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
 export type RequestSelectScalar = {
   id?: boolean
   requestNumber?: boolean
+  requesterUsername?: boolean
   status?: boolean
   note?: boolean
   createdById?: boolean
@@ -1310,7 +1363,7 @@ export type RequestSelectScalar = {
   updatedAt?: boolean
 }
 
-export type RequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "requestNumber" | "status" | "note" | "createdById" | "approvedById" | "supplierId" | "approvedAt" | "completedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["request"]>
+export type RequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "requestNumber" | "requesterUsername" | "status" | "note" | "createdById" | "approvedById" | "supplierId" | "approvedAt" | "completedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["request"]>
 export type RequestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   approvedBy?: boolean | Prisma.Request$approvedByArgs<ExtArgs>
@@ -1342,6 +1395,7 @@ export type $RequestPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     requestNumber: string
+    requesterUsername: string | null
     status: $Enums.RequestStatus
     note: string | null
     createdById: number
@@ -1781,6 +1835,7 @@ export interface Prisma__RequestClient<T, Null = never, ExtArgs extends runtime.
 export interface RequestFieldRefs {
   readonly id: Prisma.FieldRef<"Request", 'String'>
   readonly requestNumber: Prisma.FieldRef<"Request", 'String'>
+  readonly requesterUsername: Prisma.FieldRef<"Request", 'String'>
   readonly status: Prisma.FieldRef<"Request", 'RequestStatus'>
   readonly note: Prisma.FieldRef<"Request", 'String'>
   readonly createdById: Prisma.FieldRef<"Request", 'Int'>

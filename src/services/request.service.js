@@ -150,6 +150,7 @@ export async function createRequestService({
   items,
   note,
   requesterId,
+  requesterUsername,
 }) {
   if (!requesterId) {
     throw new Error(
@@ -245,6 +246,9 @@ export async function createRequestService({
         requestNumber:
           generateRequestNumber(),
 
+        requesterUsername:
+          requesterUsername?.trim() || null,
+
         createdById:
           Number(requesterId),
 
@@ -296,11 +300,17 @@ export async function createRequestService({
 
   return request;
 }
-async function notifyApprovedRequest(requestNumber) {
+
+
+async function notifyApprovedRequest(
+  requestNumber,
+  processedByUsername
+) {
   try {
     await sendRequestStatusNotification({
       requestNumber,
       status: "APPROVED",
+      processedByUsername,
     });
 
     return {
@@ -317,6 +327,7 @@ async function notifyApprovedRequest(requestNumber) {
     };
   }
 }
+
 
 export async function approveRequestService(id, approvedById) {
   if (!approvedById) {
@@ -469,9 +480,10 @@ export async function approveRequestService(id, approvedById) {
     });
   });
 
-  const notification = await notifyApprovedRequest(
-    approvedRequest.requestNumber
-  );
+const notification = await notifyApprovedRequest(
+  approvedRequest.requestNumber,
+  approvedRequest.approvedBy?.username
+);
 
   const secret = process.env.INVENTORY_TRANSFER_SECRET;
   const posApiUrl = process.env.POS_API_URL;
@@ -592,6 +604,21 @@ export async function rejectRequestService(
     throw new Error("Alasan penolakan wajib diisi");
   }
 
+  const rejector = await prisma.user.findUnique({
+  where: {
+    id: Number(rejectedById),
+  },
+  select: {
+    username: true,
+  },
+});
+
+if (!rejector?.username) {
+  throw new Error(
+    "Username user yang menolak request tidak ditemukan"
+  );
+}
+
   const rejectedRequest = await prisma.request.updateMany({
     where: {
       id,
@@ -638,11 +665,12 @@ export async function rejectRequestService(
   let notificationSent = false;
 
   try {
-    await sendRequestStatusNotification({
-      requestNumber: result.requestNumber,
-      status: "REJECTED",
-      reason: rejectionReason,
-    });
+await sendRequestStatusNotification({
+  requestNumber: result.requestNumber,
+  status: "REJECTED",
+  reason: rejectionReason,
+  processedByUsername: rejector.username,
+});
 
     notificationSent = true;
   } catch (error) {

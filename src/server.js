@@ -1,3 +1,5 @@
+process.title = "inventory-server";
+
 import "dotenv/config";
 import app from "./app.js";
 
