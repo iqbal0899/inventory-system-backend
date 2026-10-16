@@ -9,6 +9,7 @@ import dashboardRoutes from "./routes/dashboard.route.js";
 import stockRoutes from "./routes/stock.route.js";
 import requestRoutes from "./routes/request.route.js";
 import userRoutes from "./routes/user.route.js";
+import purchaseRoutes from "./routes/purchase.route.js";
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/stock", stockRoutes);
 app.use("/api/v1/requests", requestRoutes);
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/purchases", purchaseRoutes);
 
 app.get("/", (req, res) => {
   res.json({

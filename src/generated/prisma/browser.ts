@@ -47,3 +47,13 @@ export type Request = Prisma.RequestModel
  * 
  */
 export type RequestItem = Prisma.RequestItemModel
+/**
+ * Model Purchase
+ * 
+ */
+export type Purchase = Prisma.PurchaseModel
+/**
+ * Model PurchaseItem
+ * 
+ */
+export type PurchaseItem = Prisma.PurchaseItemModel
