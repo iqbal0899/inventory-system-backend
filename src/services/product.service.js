@@ -134,6 +134,7 @@ export async function createProductService(data) {
   });
 }
 
+
 export async function getProductsService() {
   return prisma.product.findMany({
     orderBy: {

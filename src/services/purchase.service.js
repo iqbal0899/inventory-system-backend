@@ -220,6 +220,7 @@ export async function createPurchaseService(data) {
 }
 
 
+
 export async function receivePurchaseService(id, userId) {
   const purchaseId = Number(id);
   const parsedUserId = Number(userId);
@@ -286,7 +287,18 @@ export async function receivePurchaseService(id, userId) {
     }
 
     for (const item of purchase.items) {
-      const product = item.product;
+      const product = await tx.product.findUnique({
+        where: {
+          id: item.productId,
+        },
+      });
+
+      if (!product) {
+        throw new Error(
+          `Produk dengan ID ${item.productId} tidak ditemukan`
+        );
+      }
+
       const stockBefore = product.stock;
       const stockAfter = stockBefore + item.quantity;
 
@@ -313,11 +325,16 @@ export async function receivePurchaseService(id, userId) {
               id: parsedUserId,
             },
           },
+          purchase: {
+            connect: {
+              id: purchase.id,
+            },
+          },
           type: "IN",
           quantity: item.quantity,
           stockBefore,
           stockAfter,
-          note: `Penerimaan pembelian ${purchase.purchaseNumber}`,
+          note: `Penerimaan pembelian`,
         },
       });
     }
@@ -330,6 +347,7 @@ export async function receivePurchaseService(id, userId) {
     });
   });
 }
+
 
 
 export async function cancelPurchaseService(id, data = {}) {

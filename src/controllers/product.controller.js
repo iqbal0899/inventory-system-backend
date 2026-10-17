@@ -89,6 +89,8 @@ export async function getProductById(req, res) {
 // CREATE PRODUCT
 export async function createProduct(req, res) {
   try {
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
     const {
       name,
       description,

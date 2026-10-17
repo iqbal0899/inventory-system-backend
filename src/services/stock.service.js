@@ -120,6 +120,12 @@ export async function getStockMovementsService(params = {}) {
             },
           },
         },
+        purchase: {
+          select: {
+            id: true,
+            purchaseNumber: true,
+          }
+        }
       },
       orderBy: {
         createdAt: "desc",
@@ -152,40 +158,42 @@ export async function getStockMovementsService(params = {}) {
     );
   }
 
-  const data = movements.map((movement) => {
-    const request = movement.request;
+const data = movements.map((movement) => {
+  const request = movement.request;
+  const purchase = movement.purchase;
 
-    return {
-      id: movement.id,
-      productId: movement.productId,
-      code: movement.product?.code ?? "-",
-      name: movement.product?.name ?? "-",
-      product: movement.product?.name ?? "-",
-      supplier: movement.product?.supplier?.name ?? "-",
-      price: Number(movement.product?.price ?? 0),
-      type: movement.type,
-      quantity: movement.quantity,
-      stockBefore: movement.stockBefore,
-      stockAdded:
-        movement.type === "OUT"
-          ? stockAddedMap.get(movement.productId) ?? 0
-          : movement.type === "IN"
-            ? movement.quantity
-            : 0,
-      stockReduced:
-        movement.type === "OUT"
-          ? Math.abs(movement.quantity)
+  return {
+    id: movement.id,
+    productId: movement.productId,
+    code: movement.product?.code ?? "-",
+    name: movement.product?.name ?? "-",
+    product: movement.product?.name ?? "-",
+    supplier: movement.product?.supplier?.name ?? "-",
+    price: Number(movement.product?.price ?? 0),
+    type: movement.type,
+    quantity: movement.quantity,
+    stockBefore: movement.stockBefore,
+    stockAdded:
+      movement.type === "OUT"
+        ? stockAddedMap.get(movement.productId) ?? 0
+        : movement.type === "IN"
+          ? movement.quantity
           : 0,
-      stockAfter: movement.stockAfter,
-      currentStock: movement.product?.stock ?? 0,
-      date: movement.createdAt,
-      createdAt: movement.createdAt,
-      user: movement.user?.username ?? "-",
-      username: movement.user?.username ?? "-",
-      requestNumber: request?.requestNumber ?? "-",
-      note: movement.note ?? "-",
-    };
-  });
+    stockReduced:
+      movement.type === "OUT"
+        ? Math.abs(movement.quantity)
+        : 0,
+    stockAfter: movement.stockAfter,
+    currentStock: movement.product?.stock ?? 0,
+    date: movement.createdAt,
+    createdAt: movement.createdAt,
+    user: movement.user?.username ?? "-",
+    username: movement.user?.username ?? "-",
+    requestNumber: request?.requestNumber ?? "-",
+    purchaseNumber: purchase?.purchaseNumber ?? "-",
+    note: movement.note ?? "-",
+  };
+});
 
   return {
     data,
@@ -236,16 +244,17 @@ export async function stockInService({
     });
 
     await tx.stockMovement.create({
-      data: {
-        type: "IN",
-        quantity: parsedQuantity,
-        stockBefore,
-        stockAfter,
-        note: note || null,
-        productId: parsedProductId,
-        userId: Number(userId),
-      },
-    });
+  data: {
+    type: "IN",
+    quantity: item.quantity,
+    stockBefore,
+    stockAfter,
+    note: note || null,
+    productId: item.productId,
+    userId: Number(userId),
+    purchaseId: purchase.id,
+  },
+});
 
     return updatedProduct;
   });

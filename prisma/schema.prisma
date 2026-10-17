@@ -34,11 +34,11 @@ enum RequestStatus {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  username String   @unique
-  email    String   @unique
-  password String
-  role     UserRole @default(STAFF)
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      UserRole @default(STAFF)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -99,7 +99,7 @@ model Product {
 }
 
 model StockMovement {
-  id          Int                @id @default(autoincrement())
+  id          Int               @id @default(autoincrement())
   type        StockMovementType
   quantity    Int
   stockBefore Int
@@ -115,11 +115,15 @@ model StockMovement {
   requestId String?
   request   Request? @relation(fields: [requestId], references: [id], onDelete: SetNull)
 
+  purchaseId Int?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
 
   @@index([productId])
   @@index([userId])
   @@index([requestId])
+  @@index([purchaseId])
   @@index([type])
   @@index([createdAt])
   @@map("stock_movements")
@@ -142,8 +146,8 @@ model Request {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
-  items             RequestItem[]
-  stockMovements    StockMovement[]
+  items          RequestItem[]
+  stockMovements StockMovement[]
 
   @@index([createdById])
   @@index([approvedById])
@@ -179,19 +183,20 @@ enum PurchaseStatus {
 }
 
 model Purchase {
-  id            Int            @id @default(autoincrement())
-  purchaseNumber String        @unique
-  supplierId    Int
-  purchaseDate  DateTime       @default(now())
-  status        PurchaseStatus @default(PENDING)
-  totalAmount   Decimal        @db.Decimal(12, 2)
-  note          String?
-  cancelReason  String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id             Int            @id @default(autoincrement())
+  purchaseNumber String         @unique
+  supplierId     Int
+  purchaseDate   DateTime       @default(now())
+  status         PurchaseStatus @default(PENDING)
+  totalAmount    Decimal        @db.Decimal(12, 2)
+  note           String?
+  cancelReason   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
-  supplier      Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  items         PurchaseItem[]
+  supplier       Supplier        @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items          PurchaseItem[]
+  stockMovements StockMovement[]
 
   @@index([supplierId])
   @@index([status])
@@ -200,15 +205,15 @@ model Purchase {
 }
 
 model PurchaseItem {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   purchaseId Int
   productId  Int
   quantity   Int
-  unitPrice  Decimal  @db.Decimal(12, 2)
-  subtotal   Decimal  @db.Decimal(12, 2)
+  unitPrice  Decimal @db.Decimal(12, 2)
+  subtotal   Decimal @db.Decimal(12, 2)
 
-  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@index([purchaseId])
   @@index([productId])
