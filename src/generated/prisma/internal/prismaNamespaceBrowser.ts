@@ -58,7 +58,8 @@ export const ModelName = {
   Request: 'Request',
   RequestItem: 'RequestItem',
   Purchase: 'Purchase',
-  PurchaseItem: 'PurchaseItem'
+  PurchaseItem: 'PurchaseItem',
+  PurchaseIdempotency: 'PurchaseIdempotency'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -197,6 +198,17 @@ export const PurchaseItemScalarFieldEnum = {
 } as const
 
 export type PurchaseItemScalarFieldEnum = (typeof PurchaseItemScalarFieldEnum)[keyof typeof PurchaseItemScalarFieldEnum]
+
+
+export const PurchaseIdempotencyScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  payloadHash: 'payloadHash',
+  purchaseId: 'purchaseId',
+  createdAt: 'createdAt'
+} as const
+
+export type PurchaseIdempotencyScalarFieldEnum = (typeof PurchaseIdempotencyScalarFieldEnum)[keyof typeof PurchaseIdempotencyScalarFieldEnum]
 
 
 export const SortOrder = {

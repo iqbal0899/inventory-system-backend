@@ -1,3 +1,4 @@
+
 import {
   getPurchasesService,
   getPurchaseByIdService,
@@ -7,8 +8,18 @@ import {
   deletePurchaseService,
 } from "../services/purchase.service.js";
 
+const getAuthenticatedUserId = (req) =>
+  req.user?.id ?? req.user?.userId ?? null;
+
 const handleError = (res, error) => {
   const message = error.message || "Terjadi kesalahan pada server";
+
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({
+      success: false,
+      message,
+    });
+  }
 
   if (message.includes("tidak ditemukan")) {
     return res.status(404).json({
@@ -78,7 +89,28 @@ export async function getPurchaseById(req, res) {
 
 export async function createPurchase(req, res) {
   try {
-    const purchase = await createPurchaseService(req.body);
+    const userId = getAuthenticatedUserId(req);
+    const idempotencyKey = req.get("Idempotency-Key")?.trim();
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Pengguna belum terautentikasi",
+      });
+    }
+
+    if (!idempotencyKey) {
+      return res.status(400).json({
+        success: false,
+        message: "Idempotency key wajib disertakan",
+      });
+    }
+
+    const purchase = await createPurchaseService(
+      req.body,
+      idempotencyKey,
+      userId
+    );
 
     return res.status(201).json({
       success: true,
@@ -90,10 +122,9 @@ export async function createPurchase(req, res) {
   }
 }
 
-
 export async function receivePurchase(req, res) {
   try {
-    const userId = req.user?.id ?? req.user?.userId;
+    const userId = getAuthenticatedUserId(req);
 
     if (!userId) {
       return res.status(401).json({
@@ -117,12 +148,21 @@ export async function receivePurchase(req, res) {
   }
 }
 
-
 export async function cancelPurchase(req, res) {
   try {
+    const userId = getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Pengguna belum terautentikasi",
+      });
+    }
+
     const purchase = await cancelPurchaseService(
       req.params.id,
-      req.body
+      req.body,
+      userId
     );
 
     return res.status(200).json({

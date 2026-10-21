@@ -1,5 +1,6 @@
-import { prisma } from "../config/database.js";
 
+import { createHash, randomUUID } from "node:crypto";
+import { prisma } from "../config/database.js";
 
 const purchaseInclude = {
   supplier: true,
@@ -20,17 +21,43 @@ const purchaseInclude = {
   },
 };
 
+async function getUserLogInfo(db, userId) {
+  const parsedUserId = Number(userId);
 
-const generatePurchaseNumber = () => {
+  if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+    throw new Error("User yang melakukan aksi tidak valid");
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: parsedUserId },
+    select: {
+      id: true,
+      username: true,
+      role: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User yang melakukan aksi tidak ditemukan");
+  }
+
+  return {
+    userId: user.id,
+    username: user.username,
+    role: user.role,
+  };
+}
+
+function generatePurchaseNumber() {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000)
     .toString()
     .padStart(3, "0");
 
   return `PO-${timestamp}-${random}`;
-};
+}
 
-const validateItems = (items) => {
+function validateItems(items) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("Minimal harus ada satu item pembelian");
   }
@@ -45,7 +72,9 @@ const validateItems = (items) => {
     }
 
     if (!Number.isInteger(quantity) || quantity <= 0) {
-      throw new Error("Jumlah pembelian harus berupa bilangan bulat positif");
+      throw new Error(
+        "Jumlah pembelian harus berupa bilangan bulat positif"
+      );
     }
 
     if (!Number.isFinite(unitPrice) || unitPrice < 0) {
@@ -59,7 +88,61 @@ const validateItems = (items) => {
       subtotal: quantity * unitPrice,
     };
   });
-};
+}
+
+function createPurchasePayload(data, supplierId, items) {
+  return {
+    supplierId,
+    purchaseDate: data.purchaseDate
+      ? new Date(data.purchaseDate).toISOString()
+      : null,
+    note: data.note?.trim() || null,
+    items: items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice.toFixed(2),
+    })),
+  };
+}
+
+function createPayloadHash(payload) {
+  return createHash("sha256")
+    .update(JSON.stringify(payload))
+    .digest("hex");
+}
+
+async function findExistingIdempotentPurchase(key) {
+  return prisma.purchaseIdempotency.findUnique({
+    where: { key },
+    include: {
+      purchase: {
+        include: purchaseInclude,
+      },
+    },
+  });
+}
+
+function validateExistingIdempotency(record, payloadHash) {
+  if (record.payloadHash !== payloadHash) {
+    const error = new Error(
+      "Idempotency key sudah digunakan untuk data pembelian yang berbeda"
+    );
+
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (!record.purchase) {
+    const error = new Error(
+      "Key sudah digunakan, tetapi data pembelian tidak tersedia"
+    );
+
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return record.purchase;
+}
 
 export async function getPurchasesService(params = {}) {
   const page = Math.max(Number(params.page) || 1, 1);
@@ -94,16 +177,21 @@ export async function getPurchasesService(params = {}) {
   }
 
   if (status) {
-    const allowedStatuses = ["PENDING", "RECEIVED", "CANCELLED"];
+    const normalizedStatus = status.toUpperCase();
+    const allowedStatuses = [
+      "PENDING",
+      "RECEIVED",
+      "CANCELLED",
+    ];
 
-    if (!allowedStatuses.includes(status.toUpperCase())) {
+    if (!allowedStatuses.includes(normalizedStatus)) {
       throw new Error("Status pembelian tidak valid");
     }
 
-    where.status = status.toUpperCase();
+    where.status = normalizedStatus;
   }
 
-  const [purchases, total] = await prisma.$transaction([
+  const [purchases, total] = await Promise.all([
     prisma.purchase.findMany({
       where,
       include: purchaseInclude,
@@ -135,9 +223,7 @@ export async function getPurchaseByIdService(id) {
   }
 
   const purchase = await prisma.purchase.findUnique({
-    where: {
-      id: purchaseId,
-    },
+    where: { id: purchaseId },
     include: purchaseInclude,
   });
 
@@ -148,240 +234,214 @@ export async function getPurchaseByIdService(id) {
   return purchase;
 }
 
-export async function createPurchaseService(data) {
-  const supplierId = Number(data.supplierId);
-  const items = validateItems(data.items);
+export async function createPurchaseService(
+  data,
+  idempotencyKey,
+  userId
+) {
+  const requestId = randomUUID();
+  const startedAt = Date.now();
 
-  if (!Number.isInteger(supplierId) || supplierId <= 0) {
-    throw new Error("Supplier wajib dipilih");
-  }
+  let key = null;
+  let payloadHash = null;
+  let actor = {
+    userId: Number(userId) || null,
+  };
 
-  const totalAmount = items.reduce(
-    (total, item) => total + item.subtotal,
-    0
-  );
+  try {
+    actor = await getUserLogInfo(prisma, userId);
 
-  const purchaseDate = data.purchaseDate
-    ? new Date(data.purchaseDate)
-    : new Date();
-
-  if (Number.isNaN(purchaseDate.getTime())) {
-    throw new Error("Tanggal pembelian tidak valid");
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const supplier = await tx.supplier.findUnique({
-      where: {
-        id: supplierId,
-      },
-    });
-
-    if (!supplier) {
-      throw new Error("Supplier tidak ditemukan");
+    if (
+      typeof idempotencyKey !== "string" ||
+      !idempotencyKey.trim() ||
+      idempotencyKey.trim().length > 255
+    ) {
+      throw new Error("Idempotency key tidak valid");
     }
 
-    const productIds = [...new Set(items.map((item) => item.productId))];
+    key = idempotencyKey.trim();
 
-    const products = await tx.product.findMany({
-      where: {
-        id: {
-          in: productIds,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
+    const supplierId = Number(data.supplierId);
 
-    if (products.length !== productIds.length) {
-      throw new Error("Satu atau lebih produk tidak ditemukan");
+    if (!Number.isInteger(supplierId) || supplierId <= 0) {
+      throw new Error("Supplier wajib dipilih");
     }
 
-    return tx.purchase.create({
-      data: {
-        purchaseNumber: generatePurchaseNumber(),
-        supplierId,
-        purchaseDate,
-        note: data.note?.trim() || null,
-        status: "PENDING",
-        totalAmount,
-        items: {
-          create: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal: item.subtotal,
-          })),
+    const items = validateItems(data.items);
+
+    const purchaseDate = data.purchaseDate
+      ? new Date(data.purchaseDate)
+      : new Date();
+
+    if (Number.isNaN(purchaseDate.getTime())) {
+      throw new Error("Tanggal pembelian tidak valid");
+    }
+
+    const payload = createPurchasePayload(
+      data,
+      supplierId,
+      items
+    );
+
+    payloadHash = createPayloadHash(payload);
+
+    const existingRequest =
+      await findExistingIdempotentPurchase(key);
+
+    if (existingRequest) {
+      const existingPurchase = validateExistingIdempotency(
+        existingRequest,
+        payloadHash
+      );
+
+      return existingPurchase;
+    }
+
+    const totalAmount = items.reduce(
+      (total, item) => total + item.subtotal,
+      0
+    );
+
+    const purchase = await prisma.$transaction(async (tx) => {
+      const supplier = await tx.supplier.findUnique({
+        where: { id: supplierId },
+        select: { id: true },
+      });
+
+      if (!supplier) {
+        throw new Error("Supplier tidak ditemukan");
+      }
+
+      const productIds = [
+        ...new Set(items.map((item) => item.productId)),
+      ];
+
+      const products = await tx.product.findMany({
+        where: {
+          id: { in: productIds },
         },
-      },
-      include: purchaseInclude,
+        select: { id: true },
+      });
+
+      if (products.length !== productIds.length) {
+        throw new Error("Satu atau lebih produk tidak ditemukan");
+      }
+
+      const createdPurchase = await tx.purchase.create({
+        data: {
+          purchaseNumber: generatePurchaseNumber(),
+          supplierId,
+          purchaseDate,
+          note: data.note?.trim() || null,
+          status: "PENDING",
+          totalAmount,
+          items: {
+            create: items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: item.subtotal,
+            })),
+          },
+        },
+        include: purchaseInclude,
+      });
+
+      await tx.purchaseIdempotency.create({
+        data: {
+          key,
+          payloadHash,
+          purchaseId: createdPurchase.id,
+        },
+      });
+
+      return createdPurchase;
     });
-  });
+
+    console.log("[CREATE PURCHASE] Pembelian berhasil dibuat", {
+      requestId,
+      idempotencyKey: key,
+      ...actor,
+      purchaseId: purchase.id,
+      purchaseNumber: purchase.purchaseNumber,
+      supplierId: purchase.supplierId,
+      totalAmount: String(purchase.totalAmount),
+      totalItems: purchase.items.length,
+      durationMs: Date.now() - startedAt,
+    });
+
+    return purchase;
+  } catch (error) {
+    if (error.code === "P2002" && key && payloadHash) {
+      try {
+        const existingRequest =
+          await findExistingIdempotentPurchase(key);
+
+        if (existingRequest) {
+          const existingPurchase = validateExistingIdempotency(
+            existingRequest,
+            payloadHash
+          );
+
+          console.log(
+            "[CREATE PURCHASE] Request bersamaan berhasil ditangani",
+            {
+              requestId,
+              idempotencyKey: key,
+              ...actor,
+              purchaseId: existingPurchase.id,
+              purchaseNumber: existingPurchase.purchaseNumber,
+              durationMs: Date.now() - startedAt,
+            }
+          );
+
+          return existingPurchase;
+        }
+      } catch (duplicateError) {
+        if (duplicateError.statusCode === 409) {
+          error = duplicateError;
+        } else if (duplicateError.code !== "P2002") {
+          error = duplicateError;
+        }
+      }
+    }
+
+    console.error("[CREATE PURCHASE] Gagal membuat pembelian", {
+      requestId,
+      idempotencyKey: key || idempotencyKey || null,
+      ...actor,
+      error: error.message,
+      errorCode: error.code || null,
+      durationMs: Date.now() - startedAt,
+    });
+
+    throw error;
+  }
 }
-
-
 
 export async function receivePurchaseService(id, userId) {
   const purchaseId = Number(id);
-  const parsedUserId = Number(userId);
+  const requestId = randomUUID();
+  const startedAt = Date.now();
 
-  if (!Number.isInteger(purchaseId) || purchaseId <= 0) {
-    throw new Error("ID pembelian tidak valid");
-  }
+  let actor = {
+    userId: Number(userId) || null,
+  };
 
-  if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
-    throw new Error("User penerima pembelian tidak valid");
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const user = await tx.user.findUnique({
-      where: {
-        id: parsedUserId,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!user) {
-      throw new Error("User penerima pembelian tidak ditemukan");
+  try {
+    if (!Number.isInteger(purchaseId) || purchaseId <= 0) {
+      throw new Error("ID pembelian tidak valid");
     }
 
-    const purchase = await tx.purchase.findUnique({
-      where: {
-        id: purchaseId,
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    });
+    actor = await getUserLogInfo(prisma, userId);
 
-    if (!purchase) {
-      throw new Error("Data pembelian tidak ditemukan");
-    }
-
-    if (purchase.status !== "PENDING") {
-      throw new Error(
-        `Pembelian tidak dapat diterima karena statusnya ${purchase.status}`
-      );
-    }
-
-    const statusUpdate = await tx.purchase.updateMany({
-      where: {
-        id: purchaseId,
-        status: "PENDING",
-      },
-      data: {
-        status: "RECEIVED",
-      },
-    });
-
-    if (statusUpdate.count === 0) {
-      throw new Error(
-        "Pembelian sudah diproses oleh pengguna lain"
-      );
-    }
-
-    for (const item of purchase.items) {
-      const product = await tx.product.findUnique({
-        where: {
-          id: item.productId,
-        },
-      });
-
-      if (!product) {
-        throw new Error(
-          `Produk dengan ID ${item.productId} tidak ditemukan`
-        );
-      }
-
-      const stockBefore = product.stock;
-      const stockAfter = stockBefore + item.quantity;
-
-      await tx.product.update({
-        where: {
-          id: product.id,
-        },
-        data: {
-          stock: {
-            increment: item.quantity,
-          },
-        },
-      });
-
-      await tx.stockMovement.create({
-        data: {
-          product: {
-            connect: {
-              id: product.id,
-            },
-          },
-          user: {
-            connect: {
-              id: parsedUserId,
-            },
-          },
-          purchase: {
-            connect: {
-              id: purchase.id,
-            },
-          },
-          type: "IN",
-          quantity: item.quantity,
-          stockBefore,
-          stockAfter,
-          note: `Penerimaan pembelian`,
-        },
-      });
-    }
-
-    return tx.purchase.findUnique({
-      where: {
-        id: purchaseId,
-      },
-      include: purchaseInclude,
-    });
-  });
-}
-
-
-
-export async function cancelPurchaseService(id, data = {}) {
-  const purchaseId = Number(id);
-  const reason = String(data.reason || "").trim();
-
-  if (!Number.isInteger(purchaseId) || purchaseId <= 0) {
-    throw new Error("ID pembelian tidak valid");
-  }
-
-  if (!reason) {
-    throw new Error("Alasan pembatalan wajib diisi");
-  }
-
-  return prisma.$transaction(async (tx) => {
-    const result = await tx.purchase.updateMany({
-      where: {
-        id: purchaseId,
-        status: "PENDING",
-      },
-      data: {
-        status: "CANCELLED",
-        cancelReason: reason,
-      },
-    });
-
-    if (result.count === 0) {
+    const result = await prisma.$transaction(async (tx) => {
       const purchase = await tx.purchase.findUnique({
-        where: {
-          id: purchaseId,
-        },
-        select: {
-          id: true,
-          status: true,
+        where: { id: purchaseId },
+        include: {
+          items: {
+            orderBy: { id: "asc" },
+          },
         },
       });
 
@@ -389,18 +449,189 @@ export async function cancelPurchaseService(id, data = {}) {
         throw new Error("Data pembelian tidak ditemukan");
       }
 
-      throw new Error(
-        `Pembelian tidak dapat dibatalkan karena statusnya ${purchase.status}`
-      );
+      if (purchase.status !== "PENDING") {
+        throw new Error(
+          `Pembelian tidak dapat diterima karena statusnya ${purchase.status}`
+        );
+      }
+
+      const statusUpdate = await tx.purchase.updateMany({
+        where: {
+          id: purchaseId,
+          status: "PENDING",
+        },
+        data: {
+          status: "RECEIVED",
+        },
+      });
+
+      if (statusUpdate.count !== 1) {
+        throw new Error(
+          "Pembelian sudah diproses oleh pengguna lain"
+        );
+      }
+
+      const stockChanges = [];
+
+      for (const item of purchase.items) {
+        const updatedProduct = await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: { increment: item.quantity },
+          },
+          select: {
+            id: true,
+            name: true,
+            stock: true,
+          },
+        });
+
+        const stockAfter = updatedProduct.stock;
+        const stockBefore = stockAfter - item.quantity;
+
+        await tx.stockMovement.create({
+          data: {
+            type: "IN",
+            quantity: item.quantity,
+            stockBefore,
+            stockAfter,
+            note: "Pembelian berhasil diterima",
+            productId: item.productId,
+            userId: actor.userId,
+            purchaseId: purchase.id,
+          },
+        });
+
+        stockChanges.push({
+          productId: updatedProduct.id,
+          productName: updatedProduct.name,
+          quantityAdded: item.quantity,
+          stockBefore,
+          stockAfter,
+        });
+      }
+
+      const updatedPurchase = await tx.purchase.findUnique({
+        where: { id: purchaseId },
+        include: purchaseInclude,
+      });
+
+      return {
+        purchase: updatedPurchase,
+        stockChanges,
+      };
+    });
+
+    console.log("[ACCEPT PURCHASE] Pembelian berhasil diterima", {
+      requestId,
+      ...actor,
+      purchaseId: result.purchase.id,
+      purchaseNumber: result.purchase.purchaseNumber,
+      Status: "RECEIVED",
+      stockChanges: result.stockChanges,
+      durationMs: Date.now() - startedAt,
+    });
+
+    return result.purchase;
+  } catch (error) {
+    console.error("[ACCEPT PURCHASE] Gagal menerima pembelian", {
+      requestId,
+      purchaseId,
+      ...actor,
+      error: error.message,
+      errorCode: error.code || null,
+      durationMs: Date.now() - startedAt,
+    });
+
+    throw error;
+  }
+}
+
+export async function cancelPurchaseService(
+  id,
+  data = {},
+  userId
+) {
+  const purchaseId = Number(id);
+  const reason = String(data.reason || "").trim();
+  const requestId = randomUUID();
+  const startedAt = Date.now();
+
+  let actor = {
+    userId: Number(userId) || null,
+  };
+
+  try {
+    if (!Number.isInteger(purchaseId) || purchaseId <= 0) {
+      throw new Error("ID pembelian tidak valid");
     }
 
-    return tx.purchase.findUnique({
-      where: {
-        id: purchaseId,
-      },
-      include: purchaseInclude,
+    if (!reason) {
+      throw new Error("Alasan pembatalan wajib diisi");
+    }
+
+    actor = await getUserLogInfo(prisma, userId);
+
+    const purchase = await prisma.$transaction(async (tx) => {
+      const result = await tx.purchase.updateMany({
+        where: {
+          id: purchaseId,
+          status: "PENDING",
+        },
+        data: {
+          status: "CANCELLED",
+          cancelReason: reason,
+        },
+      });
+
+      if (result.count !== 1) {
+        const existingPurchase = await tx.purchase.findUnique({
+          where: { id: purchaseId },
+          select: {
+            id: true,
+            status: true,
+          },
+        });
+
+        if (!existingPurchase) {
+          throw new Error("Data pembelian tidak ditemukan");
+        }
+
+        throw new Error(
+          `Pembelian tidak dapat ditolak karena statusnya ${existingPurchase.status}`
+        );
+      }
+
+      return tx.purchase.findUnique({
+        where: { id: purchaseId },
+        include: purchaseInclude,
+      });
     });
-  });
+
+    console.log("[REJECT PURCHASE] Pembelian berhasil ditolak", {
+      requestId,
+      ...actor,
+      purchaseId: purchase.id,
+      purchaseNumber: purchase.purchaseNumber,
+      Status: "CANCELLED",
+      reason,
+      durationMs: Date.now() - startedAt,
+    });
+
+    return purchase;
+  } catch (error) {
+    console.error("[REJECT PURCHASE] Gagal menolak pembelian", {
+      requestId,
+      purchaseId,
+      ...actor,
+      reason,
+      error: error.message,
+      errorCode: error.code || null,
+      durationMs: Date.now() - startedAt,
+    });
+
+    throw error;
+  }
 }
 
 export async function deletePurchaseService(id) {
@@ -412,9 +643,7 @@ export async function deletePurchaseService(id) {
 
   return prisma.$transaction(async (tx) => {
     const purchase = await tx.purchase.findUnique({
-      where: {
-        id: purchaseId,
-      },
+      where: { id: purchaseId },
       include: {
         items: true,
       },
@@ -431,15 +660,11 @@ export async function deletePurchaseService(id) {
     }
 
     await tx.purchaseItem.deleteMany({
-      where: {
-        purchaseId,
-      },
+      where: { purchaseId },
     });
 
     return tx.purchase.delete({
-      where: {
-        id: purchaseId,
-      },
+      where: { id: purchaseId },
     });
   });
 }

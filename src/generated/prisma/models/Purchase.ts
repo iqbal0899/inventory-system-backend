@@ -267,6 +267,7 @@ export type PurchaseWhereInput = {
   supplier?: Prisma.XOR<Prisma.SupplierScalarRelationFilter, Prisma.SupplierWhereInput>
   items?: Prisma.PurchaseItemListRelationFilter
   stockMovements?: Prisma.StockMovementListRelationFilter
+  idempotencyRecord?: Prisma.XOR<Prisma.PurchaseIdempotencyNullableScalarRelationFilter, Prisma.PurchaseIdempotencyWhereInput> | null
 }
 
 export type PurchaseOrderByWithRelationInput = {
@@ -283,6 +284,7 @@ export type PurchaseOrderByWithRelationInput = {
   supplier?: Prisma.SupplierOrderByWithRelationInput
   items?: Prisma.PurchaseItemOrderByRelationAggregateInput
   stockMovements?: Prisma.StockMovementOrderByRelationAggregateInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyOrderByWithRelationInput
 }
 
 export type PurchaseWhereUniqueInput = Prisma.AtLeast<{
@@ -302,6 +304,7 @@ export type PurchaseWhereUniqueInput = Prisma.AtLeast<{
   supplier?: Prisma.XOR<Prisma.SupplierScalarRelationFilter, Prisma.SupplierWhereInput>
   items?: Prisma.PurchaseItemListRelationFilter
   stockMovements?: Prisma.StockMovementListRelationFilter
+  idempotencyRecord?: Prisma.XOR<Prisma.PurchaseIdempotencyNullableScalarRelationFilter, Prisma.PurchaseIdempotencyWhereInput> | null
 }, "id" | "purchaseNumber">
 
 export type PurchaseOrderByWithAggregationInput = {
@@ -350,6 +353,7 @@ export type PurchaseCreateInput = {
   supplier: Prisma.SupplierCreateNestedOneWithoutPurchasesInput
   items?: Prisma.PurchaseItemCreateNestedManyWithoutPurchaseInput
   stockMovements?: Prisma.StockMovementCreateNestedManyWithoutPurchaseInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyCreateNestedOneWithoutPurchaseInput
 }
 
 export type PurchaseUncheckedCreateInput = {
@@ -365,6 +369,7 @@ export type PurchaseUncheckedCreateInput = {
   updatedAt?: Date | string
   items?: Prisma.PurchaseItemUncheckedCreateNestedManyWithoutPurchaseInput
   stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutPurchaseInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUncheckedCreateNestedOneWithoutPurchaseInput
 }
 
 export type PurchaseUpdateInput = {
@@ -379,6 +384,7 @@ export type PurchaseUpdateInput = {
   supplier?: Prisma.SupplierUpdateOneRequiredWithoutPurchasesNestedInput
   items?: Prisma.PurchaseItemUpdateManyWithoutPurchaseNestedInput
   stockMovements?: Prisma.StockMovementUpdateManyWithoutPurchaseNestedInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUpdateOneWithoutPurchaseNestedInput
 }
 
 export type PurchaseUncheckedUpdateInput = {
@@ -394,6 +400,7 @@ export type PurchaseUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.PurchaseItemUncheckedUpdateManyWithoutPurchaseNestedInput
   stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutPurchaseNestedInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUncheckedUpdateOneWithoutPurchaseNestedInput
 }
 
 export type PurchaseCreateManyInput = {
@@ -580,6 +587,22 @@ export type PurchaseUpdateOneRequiredWithoutItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.PurchaseUpdateToOneWithWhereWithoutItemsInput, Prisma.PurchaseUpdateWithoutItemsInput>, Prisma.PurchaseUncheckedUpdateWithoutItemsInput>
 }
 
+export type PurchaseCreateNestedOneWithoutIdempotencyRecordInput = {
+  create?: Prisma.XOR<Prisma.PurchaseCreateWithoutIdempotencyRecordInput, Prisma.PurchaseUncheckedCreateWithoutIdempotencyRecordInput>
+  connectOrCreate?: Prisma.PurchaseCreateOrConnectWithoutIdempotencyRecordInput
+  connect?: Prisma.PurchaseWhereUniqueInput
+}
+
+export type PurchaseUpdateOneWithoutIdempotencyRecordNestedInput = {
+  create?: Prisma.XOR<Prisma.PurchaseCreateWithoutIdempotencyRecordInput, Prisma.PurchaseUncheckedCreateWithoutIdempotencyRecordInput>
+  connectOrCreate?: Prisma.PurchaseCreateOrConnectWithoutIdempotencyRecordInput
+  upsert?: Prisma.PurchaseUpsertWithoutIdempotencyRecordInput
+  disconnect?: Prisma.PurchaseWhereInput | boolean
+  delete?: Prisma.PurchaseWhereInput | boolean
+  connect?: Prisma.PurchaseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PurchaseUpdateToOneWithWhereWithoutIdempotencyRecordInput, Prisma.PurchaseUpdateWithoutIdempotencyRecordInput>, Prisma.PurchaseUncheckedUpdateWithoutIdempotencyRecordInput>
+}
+
 export type PurchaseCreateWithoutSupplierInput = {
   purchaseNumber: string
   purchaseDate?: Date | string
@@ -591,6 +614,7 @@ export type PurchaseCreateWithoutSupplierInput = {
   updatedAt?: Date | string
   items?: Prisma.PurchaseItemCreateNestedManyWithoutPurchaseInput
   stockMovements?: Prisma.StockMovementCreateNestedManyWithoutPurchaseInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyCreateNestedOneWithoutPurchaseInput
 }
 
 export type PurchaseUncheckedCreateWithoutSupplierInput = {
@@ -605,6 +629,7 @@ export type PurchaseUncheckedCreateWithoutSupplierInput = {
   updatedAt?: Date | string
   items?: Prisma.PurchaseItemUncheckedCreateNestedManyWithoutPurchaseInput
   stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutPurchaseInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUncheckedCreateNestedOneWithoutPurchaseInput
 }
 
 export type PurchaseCreateOrConnectWithoutSupplierInput = {
@@ -660,6 +685,7 @@ export type PurchaseCreateWithoutStockMovementsInput = {
   updatedAt?: Date | string
   supplier: Prisma.SupplierCreateNestedOneWithoutPurchasesInput
   items?: Prisma.PurchaseItemCreateNestedManyWithoutPurchaseInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyCreateNestedOneWithoutPurchaseInput
 }
 
 export type PurchaseUncheckedCreateWithoutStockMovementsInput = {
@@ -674,6 +700,7 @@ export type PurchaseUncheckedCreateWithoutStockMovementsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.PurchaseItemUncheckedCreateNestedManyWithoutPurchaseInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUncheckedCreateNestedOneWithoutPurchaseInput
 }
 
 export type PurchaseCreateOrConnectWithoutStockMovementsInput = {
@@ -703,6 +730,7 @@ export type PurchaseUpdateWithoutStockMovementsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supplier?: Prisma.SupplierUpdateOneRequiredWithoutPurchasesNestedInput
   items?: Prisma.PurchaseItemUpdateManyWithoutPurchaseNestedInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUpdateOneWithoutPurchaseNestedInput
 }
 
 export type PurchaseUncheckedUpdateWithoutStockMovementsInput = {
@@ -717,6 +745,7 @@ export type PurchaseUncheckedUpdateWithoutStockMovementsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.PurchaseItemUncheckedUpdateManyWithoutPurchaseNestedInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUncheckedUpdateOneWithoutPurchaseNestedInput
 }
 
 export type PurchaseCreateWithoutItemsInput = {
@@ -730,6 +759,7 @@ export type PurchaseCreateWithoutItemsInput = {
   updatedAt?: Date | string
   supplier: Prisma.SupplierCreateNestedOneWithoutPurchasesInput
   stockMovements?: Prisma.StockMovementCreateNestedManyWithoutPurchaseInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyCreateNestedOneWithoutPurchaseInput
 }
 
 export type PurchaseUncheckedCreateWithoutItemsInput = {
@@ -744,6 +774,7 @@ export type PurchaseUncheckedCreateWithoutItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutPurchaseInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUncheckedCreateNestedOneWithoutPurchaseInput
 }
 
 export type PurchaseCreateOrConnectWithoutItemsInput = {
@@ -773,6 +804,7 @@ export type PurchaseUpdateWithoutItemsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   supplier?: Prisma.SupplierUpdateOneRequiredWithoutPurchasesNestedInput
   stockMovements?: Prisma.StockMovementUpdateManyWithoutPurchaseNestedInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUpdateOneWithoutPurchaseNestedInput
 }
 
 export type PurchaseUncheckedUpdateWithoutItemsInput = {
@@ -786,6 +818,81 @@ export type PurchaseUncheckedUpdateWithoutItemsInput = {
   cancelReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutPurchaseNestedInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUncheckedUpdateOneWithoutPurchaseNestedInput
+}
+
+export type PurchaseCreateWithoutIdempotencyRecordInput = {
+  purchaseNumber: string
+  purchaseDate?: Date | string
+  status?: $Enums.PurchaseStatus
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  note?: string | null
+  cancelReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  supplier: Prisma.SupplierCreateNestedOneWithoutPurchasesInput
+  items?: Prisma.PurchaseItemCreateNestedManyWithoutPurchaseInput
+  stockMovements?: Prisma.StockMovementCreateNestedManyWithoutPurchaseInput
+}
+
+export type PurchaseUncheckedCreateWithoutIdempotencyRecordInput = {
+  id?: number
+  purchaseNumber: string
+  supplierId: number
+  purchaseDate?: Date | string
+  status?: $Enums.PurchaseStatus
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  note?: string | null
+  cancelReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.PurchaseItemUncheckedCreateNestedManyWithoutPurchaseInput
+  stockMovements?: Prisma.StockMovementUncheckedCreateNestedManyWithoutPurchaseInput
+}
+
+export type PurchaseCreateOrConnectWithoutIdempotencyRecordInput = {
+  where: Prisma.PurchaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.PurchaseCreateWithoutIdempotencyRecordInput, Prisma.PurchaseUncheckedCreateWithoutIdempotencyRecordInput>
+}
+
+export type PurchaseUpsertWithoutIdempotencyRecordInput = {
+  update: Prisma.XOR<Prisma.PurchaseUpdateWithoutIdempotencyRecordInput, Prisma.PurchaseUncheckedUpdateWithoutIdempotencyRecordInput>
+  create: Prisma.XOR<Prisma.PurchaseCreateWithoutIdempotencyRecordInput, Prisma.PurchaseUncheckedCreateWithoutIdempotencyRecordInput>
+  where?: Prisma.PurchaseWhereInput
+}
+
+export type PurchaseUpdateToOneWithWhereWithoutIdempotencyRecordInput = {
+  where?: Prisma.PurchaseWhereInput
+  data: Prisma.XOR<Prisma.PurchaseUpdateWithoutIdempotencyRecordInput, Prisma.PurchaseUncheckedUpdateWithoutIdempotencyRecordInput>
+}
+
+export type PurchaseUpdateWithoutIdempotencyRecordInput = {
+  purchaseNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  purchaseDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumPurchaseStatusFieldUpdateOperationsInput | $Enums.PurchaseStatus
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  supplier?: Prisma.SupplierUpdateOneRequiredWithoutPurchasesNestedInput
+  items?: Prisma.PurchaseItemUpdateManyWithoutPurchaseNestedInput
+  stockMovements?: Prisma.StockMovementUpdateManyWithoutPurchaseNestedInput
+}
+
+export type PurchaseUncheckedUpdateWithoutIdempotencyRecordInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  purchaseNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  supplierId?: Prisma.IntFieldUpdateOperationsInput | number
+  purchaseDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumPurchaseStatusFieldUpdateOperationsInput | $Enums.PurchaseStatus
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.PurchaseItemUncheckedUpdateManyWithoutPurchaseNestedInput
   stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutPurchaseNestedInput
 }
 
@@ -812,6 +919,7 @@ export type PurchaseUpdateWithoutSupplierInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.PurchaseItemUpdateManyWithoutPurchaseNestedInput
   stockMovements?: Prisma.StockMovementUpdateManyWithoutPurchaseNestedInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUpdateOneWithoutPurchaseNestedInput
 }
 
 export type PurchaseUncheckedUpdateWithoutSupplierInput = {
@@ -826,6 +934,7 @@ export type PurchaseUncheckedUpdateWithoutSupplierInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.PurchaseItemUncheckedUpdateManyWithoutPurchaseNestedInput
   stockMovements?: Prisma.StockMovementUncheckedUpdateManyWithoutPurchaseNestedInput
+  idempotencyRecord?: Prisma.PurchaseIdempotencyUncheckedUpdateOneWithoutPurchaseNestedInput
 }
 
 export type PurchaseUncheckedUpdateManyWithoutSupplierInput = {
@@ -894,6 +1003,7 @@ export type PurchaseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   supplier?: boolean | Prisma.SupplierDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Purchase$itemsArgs<ExtArgs>
   stockMovements?: boolean | Prisma.Purchase$stockMovementsArgs<ExtArgs>
+  idempotencyRecord?: boolean | Prisma.Purchase$idempotencyRecordArgs<ExtArgs>
   _count?: boolean | Prisma.PurchaseCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["purchase"]>
 
@@ -943,6 +1053,7 @@ export type PurchaseInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   supplier?: boolean | Prisma.SupplierDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Purchase$itemsArgs<ExtArgs>
   stockMovements?: boolean | Prisma.Purchase$stockMovementsArgs<ExtArgs>
+  idempotencyRecord?: boolean | Prisma.Purchase$idempotencyRecordArgs<ExtArgs>
   _count?: boolean | Prisma.PurchaseCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PurchaseIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -958,6 +1069,7 @@ export type $PurchasePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     supplier: Prisma.$SupplierPayload<ExtArgs>
     items: Prisma.$PurchaseItemPayload<ExtArgs>[]
     stockMovements: Prisma.$StockMovementPayload<ExtArgs>[]
+    idempotencyRecord: Prisma.$PurchaseIdempotencyPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -1367,6 +1479,7 @@ export interface Prisma__PurchaseClient<T, Null = never, ExtArgs extends runtime
   supplier<T extends Prisma.SupplierDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SupplierDefaultArgs<ExtArgs>>): Prisma.Prisma__SupplierClient<runtime.Types.Result.GetResult<Prisma.$SupplierPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   items<T extends Prisma.Purchase$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Purchase$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PurchaseItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   stockMovements<T extends Prisma.Purchase$stockMovementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Purchase$stockMovementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StockMovementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  idempotencyRecord<T extends Prisma.Purchase$idempotencyRecordArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Purchase$idempotencyRecordArgs<ExtArgs>>): Prisma.Prisma__PurchaseIdempotencyClient<runtime.Types.Result.GetResult<Prisma.$PurchaseIdempotencyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1852,6 +1965,25 @@ export type Purchase$stockMovementsArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.StockMovementScalarFieldEnum | Prisma.StockMovementScalarFieldEnum[]
+}
+
+/**
+ * Purchase.idempotencyRecord
+ */
+export type Purchase$idempotencyRecordArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PurchaseIdempotency
+   */
+  select?: Prisma.PurchaseIdempotencySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PurchaseIdempotency
+   */
+  omit?: Prisma.PurchaseIdempotencyOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PurchaseIdempotencyInclude<ExtArgs> | null
+  where?: Prisma.PurchaseIdempotencyWhereInput
 }
 
 /**

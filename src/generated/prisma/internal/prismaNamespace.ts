@@ -404,7 +404,8 @@ export const ModelName = {
   Request: 'Request',
   RequestItem: 'RequestItem',
   Purchase: 'Purchase',
-  PurchaseItem: 'PurchaseItem'
+  PurchaseItem: 'PurchaseItem',
+  PurchaseIdempotency: 'PurchaseIdempotency'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -420,7 +421,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "supplier" | "product" | "stockMovement" | "request" | "requestItem" | "purchase" | "purchaseItem"
+    modelProps: "user" | "supplier" | "product" | "stockMovement" | "request" | "requestItem" | "purchase" | "purchaseItem" | "purchaseIdempotency"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1016,6 +1017,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PurchaseIdempotency: {
+      payload: Prisma.$PurchaseIdempotencyPayload<ExtArgs>
+      fields: Prisma.PurchaseIdempotencyFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PurchaseIdempotencyFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PurchaseIdempotencyFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>
+        }
+        findFirst: {
+          args: Prisma.PurchaseIdempotencyFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PurchaseIdempotencyFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>
+        }
+        findMany: {
+          args: Prisma.PurchaseIdempotencyFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>[]
+        }
+        create: {
+          args: Prisma.PurchaseIdempotencyCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>
+        }
+        createMany: {
+          args: Prisma.PurchaseIdempotencyCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PurchaseIdempotencyCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>[]
+        }
+        delete: {
+          args: Prisma.PurchaseIdempotencyDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>
+        }
+        update: {
+          args: Prisma.PurchaseIdempotencyUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>
+        }
+        deleteMany: {
+          args: Prisma.PurchaseIdempotencyDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PurchaseIdempotencyUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PurchaseIdempotencyUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>[]
+        }
+        upsert: {
+          args: Prisma.PurchaseIdempotencyUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PurchaseIdempotencyPayload>
+        }
+        aggregate: {
+          args: Prisma.PurchaseIdempotencyAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePurchaseIdempotency>
+        }
+        groupBy: {
+          args: Prisma.PurchaseIdempotencyGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PurchaseIdempotencyGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PurchaseIdempotencyCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PurchaseIdempotencyCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1175,6 +1250,17 @@ export const PurchaseItemScalarFieldEnum = {
 } as const
 
 export type PurchaseItemScalarFieldEnum = (typeof PurchaseItemScalarFieldEnum)[keyof typeof PurchaseItemScalarFieldEnum]
+
+
+export const PurchaseIdempotencyScalarFieldEnum = {
+  id: 'id',
+  key: 'key',
+  payloadHash: 'payloadHash',
+  purchaseId: 'purchaseId',
+  createdAt: 'createdAt'
+} as const
+
+export type PurchaseIdempotencyScalarFieldEnum = (typeof PurchaseIdempotencyScalarFieldEnum)[keyof typeof PurchaseIdempotencyScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1505,6 +1591,7 @@ export type GlobalOmitConfig = {
   requestItem?: Prisma.RequestItemOmit
   purchase?: Prisma.PurchaseOmit
   purchaseItem?: Prisma.PurchaseItemOmit
+  purchaseIdempotency?: Prisma.PurchaseIdempotencyOmit
 }
 
 /* Types for Logging */

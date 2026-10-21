@@ -217,6 +217,10 @@ export async function stockInService({
     const parsedProductId = Number(productId);
     const parsedQuantity = Number(quantity);
 
+    if (!Number.isInteger(parsedProductId) || parsedProductId <= 0) {
+      throw new Error("ID produk tidak valid");
+    }
+
     if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
       throw new Error("Jumlah stok masuk harus bilangan bulat positif");
     }
@@ -244,17 +248,16 @@ export async function stockInService({
     });
 
     await tx.stockMovement.create({
-  data: {
-    type: "IN",
-    quantity: item.quantity,
-    stockBefore,
-    stockAfter,
-    note: note || null,
-    productId: item.productId,
-    userId: Number(userId),
-    purchaseId: purchase.id,
-  },
-});
+      data: {
+        type: "IN",
+        quantity: parsedQuantity,
+        stockBefore,
+        stockAfter,
+        note: note || null,
+        productId: parsedProductId,
+        userId: Number(userId),
+      },
+    });
 
     return updatedProduct;
   });
@@ -300,17 +303,18 @@ export async function stockOutService({
       },
     });
 
-    await tx.stockMovement.create({
-      data: {
-        type: "OUT",
-        quantity: parsedQuantity,
-        stockBefore,
-        stockAfter,
-        note: note || null,
-        productId: parsedProductId,
-        userId: Number(userId),
-      },
-    });
+await tx.stockMovement.create({
+  data: {
+    type: "IN",
+    quantity: item.quantity,
+    stockBefore,
+    stockAfter,
+    note: purchase.note || null,
+    productId: item.productId,
+    userId: Number(userId),
+    purchaseId: purchase.id,
+  },
+});
 
     return updatedProduct;
   });

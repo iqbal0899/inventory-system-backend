@@ -57,3 +57,8 @@ export type Purchase = Prisma.PurchaseModel
  * 
  */
 export type PurchaseItem = Prisma.PurchaseItemModel
+/**
+ * Model PurchaseIdempotency
+ * 
+ */
+export type PurchaseIdempotency = Prisma.PurchaseIdempotencyModel
