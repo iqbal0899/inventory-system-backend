@@ -1,4 +1,7 @@
+
 import { prisma } from "../config/database.js";
+
+const ALLOWED_PERIODS = [7, 30, 90];
 
 function getDateDaysAgo(days) {
   const date = new Date();
@@ -31,10 +34,10 @@ function getDayName(date) {
   return days[date.getDay()];
 }
 
-function createSevenDayMovement() {
+function createStockMovement(period) {
   const result = [];
 
-  for (let i = 6; i >= 0; i--) {
+  for (let i = period - 1; i >= 0; i--) {
     const date = getDateDaysAgo(i);
 
     result.push({
@@ -49,24 +52,27 @@ function createSevenDayMovement() {
   return result;
 }
 
-function formatStockMovement(stockMovements) {
-  const result = createSevenDayMovement();
+function formatStockMovement(stockMovements, period) {
+  const result = createStockMovement(period);
+
+  const movementMap = new Map(
+    result.map((item) => [item.date, item])
+  );
 
   for (const movement of stockMovements) {
     const movementDate = new Date(movement.createdAt);
     const dateKey = formatDate(movementDate);
 
-    const dayData = result.find(
-      (item) => item.date === dateKey
-    );
+    const dayData = movementMap.get(dateKey);
 
-    if (!dayData) {
-      continue;
-    }
+    if (!dayData) continue;
 
     const quantity = Number(movement.quantity) || 0;
 
-    if (movement.type === "IN") {
+    if (
+      movement.type === "IN" ||
+      movement.type === "INITIAL"
+    ) {
       dayData.stockIn += quantity;
     }
 
@@ -125,7 +131,17 @@ async function getLowStockProducts() {
     .slice(0, 10);
 }
 
-export async function getDashboardData() {
+export async function getDashboardData(period = 7) {
+  const selectedPeriod = Number(period);
+
+  if (!ALLOWED_PERIODS.includes(selectedPeriod)) {
+    throw new Error("Periode dashboard tidak valid");
+  }
+
+  const startDate = getDateDaysAgo(
+    selectedPeriod - 1
+  );
+
   const [
     totalProducts,
     totalStockResult,
@@ -153,7 +169,7 @@ export async function getDashboardData() {
     prisma.stockMovement.findMany({
       where: {
         createdAt: {
-          gte: getDateDaysAgo(6),
+          gte: startDate,
         },
       },
 
@@ -184,8 +200,10 @@ export async function getDashboardData() {
   const totalStock =
     totalStockResult._sum.stock ?? 0;
 
-  const stockMovement =
-    formatStockMovement(stockMovements);
+  const stockMovement = formatStockMovement(
+    stockMovements,
+    selectedPeriod
+  );
 
   return {
     statistics: {

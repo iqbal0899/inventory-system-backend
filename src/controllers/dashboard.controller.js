@@ -1,8 +1,20 @@
+
 import { getDashboardData } from "../services/dashboard.service.js";
 
 export async function getDashboard(req, res) {
   try {
-    const data = await getDashboardData();
+    const period = Number(req.query.period || 7);
+
+    const allowedPeriods = [7, 30, 90];
+
+    if (!allowedPeriods.includes(period)) {
+      return res.status(400).json({
+        success: false,
+        message: "Periode dashboard harus 7, 30, atau 90 hari",
+      });
+    }
+
+    const data = await getDashboardData(period);
 
     return res.status(200).json({
       success: true,
