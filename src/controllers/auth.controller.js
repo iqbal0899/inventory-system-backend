@@ -12,7 +12,7 @@ export async function login(req, res) {
     if (!username || !password) {
       return errorResponse(
         res,
-        "Username dan password wajib diisi",
+        "Username dan password wajib diisi.",
         400
       );
     }
@@ -22,7 +22,7 @@ export async function login(req, res) {
     if (!result?.token || !result?.user) {
       return errorResponse(
         res,
-        "Data login tidak lengkap",
+        "Data login tidak lengkap.",
         500
       );
     }
@@ -57,15 +57,33 @@ export async function login(req, res) {
       },
       200
     );
-  } catch (error) {
-    console.error("Login error:", error.message);
+  
+} catch (error) {
+  console.error("Login error:", error);
 
+  if (error.code === "USER_NOT_FOUND") {
     return errorResponse(
       res,
-      "Login gagal",
-      500
+      "Username tidak ditemukan.",
+      401
     );
   }
+
+  if (error.code === "INVALID_PASSWORD") {
+    return errorResponse(
+      res,
+      "Password yang Anda masukkan salah.",
+      401
+    );
+  }
+
+  return errorResponse(
+    res,
+    "Terjadi kesalahan pada server.",
+    500
+  );
+}
+
 }
 
 export async function getMe(req, res) {

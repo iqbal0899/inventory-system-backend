@@ -1,13 +1,25 @@
-import { Router } from "express";
-import { login, getMe, logout } from "../controllers/auth.controller.js";
-import { authentication } from "../middleware/auth.middleware.js";
+import express from "express";
 
-const router = Router();
+import {
+  login,
+  getMe,
+  logout,
+} from "../controllers/auth.controller.js";
 
-router.post("/login", login);
+import {
+  authLimiter,
+} from "../middleware/rate-limiter.middleware.js";
 
-router.get("/me", authentication, getMe)
+import {
+  authentication,
+} from "../middleware/auth.middleware.js";
 
-router.post("/logout", logout);
+const router = express.Router();
+
+router.post("/login", authLimiter, login);
+
+router.get("/me", authentication, getMe);
+
+router.post("/logout", authentication, logout);
 
 export default router;

@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Backend API for Inventory System",
   "type": "module",
- "scripts": {
-  "dev": "printf \"\\033]0;internal server\\007\" && nodemon src/server.js",
-  "start": "printf \"\\033]0;internal server\\007\" && node src/server.js",
+  "scripts": {
+    "dev": "printf \"\\033]0;internal server\\007\" && nodemon src/server.js",
+    "start": "printf \"\\033]0;internal server\\007\" && node src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
@@ -26,6 +26,7 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.3",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.4.0"
   },
